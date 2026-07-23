@@ -25,8 +25,8 @@ export default function Home() {
         <FitSection />
         <Testimonials />
         <CostReason />
-        <Portfolio />
         <Plans />
+        <Portfolio />
         <AddOns />
         <TrustPromise />
         <Process />
