@@ -40,14 +40,11 @@ export default function Plans() {
                 </p>
 
                 <div className="mt-5 flex items-baseline gap-1.5">
-                  {plan.fromPrice && (
-                    <span className="text-[15px] font-medium text-muted">부터</span>
-                  )}
                   <span className="font-display text-4xl font-extrabold tracking-tightest text-ink">
                     {formatManwon(plan.price)}
                   </span>
                   {plan.fromPrice && (
-                    <span className="text-[15px] font-medium text-muted">~</span>
+                    <span className="text-[15px] font-medium text-muted">부터~</span>
                   )}
                 </div>
 
