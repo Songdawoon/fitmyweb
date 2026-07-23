@@ -21,13 +21,13 @@ export default function Home() {
         <Hero />
         <Problem />
         <FitSection />
+        <Testimonials />
         <CostReason />
-        <Process />
         <Portfolio />
         <Plans />
         <AddOns />
         <TrustPromise />
-        <Testimonials />
+        <Process />
         <FAQ />
         <FinalCTA />
       </main>
