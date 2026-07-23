@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, ShieldCheck, Check } from "@phosphor-icons/react";
-import { brand, heroAssurances, trustKeywords } from "@/lib/data";
+import { ArrowRight } from "@phosphor-icons/react";
+import { brand, trustKeywords } from "@/lib/data";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -83,37 +83,22 @@ export default function Hero() {
             </motion.div>
           </div>
 
-          {/* assurance rail */}
+          {/* trust keywords fill the right whitespace, card content moves to the band below */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease, delay: 0.5 }}
-            className="lg:col-span-4"
+            className="flex flex-wrap gap-2 lg:col-span-4 lg:flex-col lg:items-start"
           >
-            <div className="rounded-2xl border border-line bg-paper p-6 shadow-[0_20px_50px_-30px_rgba(16,23,51,0.25)]">
-              <div className="flex items-center gap-2 text-sm font-semibold text-ink">
-                <ShieldCheck size={18} weight="fill" className="text-accent" />
-                제작 약속
-              </div>
-              <ul className="mt-4 flex flex-col gap-3 border-t border-line pt-4">
-                {heroAssurances.map((a) => (
-                  <li key={a} className="flex items-start gap-2.5 text-[15px] text-ink">
-                    <Check size={17} weight="bold" className="mt-0.5 shrink-0 text-accent" />
-                    {a}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-5 flex flex-wrap gap-1.5">
-                {trustKeywords.map((k) => (
-                  <span
-                    key={k}
-                    className="rounded-full bg-mist px-2.5 py-1 text-[12px] text-muted"
-                  >
-                    {k}
-                  </span>
-                ))}
-              </div>
-            </div>
+            {trustKeywords.map((k) => (
+              <span
+                key={k}
+                className="inline-flex items-center gap-2 rounded-full border border-line bg-paper px-4 py-2 text-[14px] text-ink"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                {k}
+              </span>
+            ))}
           </motion.div>
         </div>
       </div>

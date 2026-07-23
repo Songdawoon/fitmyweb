@@ -1,5 +1,6 @@
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
+import AssuranceBand from "@/components/AssuranceBand";
 import Problem from "@/components/Problem";
 import FitSection from "@/components/FitSection";
 import CostReason from "@/components/CostReason";
@@ -19,6 +20,7 @@ export default function Home() {
       <Nav />
       <main>
         <Hero />
+        <AssuranceBand />
         <Problem />
         <FitSection />
         <Testimonials />
