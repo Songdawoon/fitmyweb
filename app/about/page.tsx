@@ -21,7 +21,7 @@ export default function AboutPage() {
           <div className="container-page section-x py-20 sm:py-28">
             <Reveal>
               <p className="eyebrow">About {brand.latin}</p>
-              <h1 className="mt-6 h-display text-4xl sm:text-5xl lg:text-[3.4rem]">
+              <h1 className="mt-6 h-display leading-[1.4] text-4xl sm:text-5xl lg:text-[3.4rem]">
                 {about.title.map((t) => (
                   <span key={t} className="block">
                     {t}

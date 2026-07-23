@@ -8,7 +8,7 @@ export default function Problem() {
         <div className="lg:col-span-5">
           <Reveal>
             <p className="eyebrow">Why it matters</p>
-            <h2 className="mt-5 h-display text-3xl sm:text-4xl lg:text-[2.6rem]">
+            <h2 className="mt-5 h-display leading-[1.4] text-3xl sm:text-4xl lg:text-[2.6rem]">
               {problem.title.map((t) => (
                 <span key={t} className="block">
                   {t}

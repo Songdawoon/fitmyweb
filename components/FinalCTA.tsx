@@ -9,7 +9,7 @@ export default function FinalCTA() {
           <div className="lg:col-span-5">
             <Reveal>
               <p className="eyebrow">Start here</p>
-              <h2 className="mt-5 h-display text-3xl sm:text-4xl lg:text-[2.75rem]">
+              <h2 className="mt-5 h-display leading-[1.4] text-3xl sm:text-4xl lg:text-[2.75rem]">
                 우리 사업에 맞는 홈페이지,
                 <br />
                 어디서부터 시작할까요?
