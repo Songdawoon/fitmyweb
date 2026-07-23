@@ -1,7 +1,6 @@
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
 import AssuranceBand from "@/components/AssuranceBand";
-import Stats from "@/components/Stats";
 import Problem from "@/components/Problem";
 import FitSection from "@/components/FitSection";
 import CostReason from "@/components/CostReason";
@@ -22,7 +21,6 @@ export default function Home() {
       <main>
         <Hero />
         <AssuranceBand />
-        <Stats />
         <Problem />
         <FitSection />
         <Testimonials />

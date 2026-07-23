@@ -11,7 +11,7 @@ import {
   Lifebuoy,
 } from "@phosphor-icons/react";
 import { brand } from "@/lib/data";
-import HeroGallery from "./HeroGallery";
+import HeroStats from "./HeroStats";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -107,7 +107,7 @@ export default function Hero() {
             transition={{ duration: 0.7, ease, delay: 0.4 }}
             className="lg:col-span-5"
           >
-            <HeroGallery />
+            <HeroStats />
           </motion.div>
         </div>
 
