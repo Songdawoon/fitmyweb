@@ -29,6 +29,7 @@ body {
   }
   .h-display {
     @apply font-sans font-extrabold leading-[1.34] tracking-tightest text-ink;
+    word-break: keep-all;
   }
   /* thin focus ring for form controls */
   .field {
