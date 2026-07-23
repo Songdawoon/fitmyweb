@@ -25,7 +25,7 @@ export default function Hero() {
               합리적인 커스텀 홈페이지 제작
             </motion.p>
 
-            <h1 className="mt-6 h-display text-[9vw] leading-[1.05] sm:text-5xl lg:text-[3.9rem]">
+            <h1 className="mt-6 h-display text-[9vw] leading-[1.18] sm:text-5xl lg:text-[3.9rem]">
               {brand.mainCopy.map((line, i) => (
                 <span key={line} className="block overflow-hidden py-0.5">
                   <motion.span
