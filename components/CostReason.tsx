@@ -9,7 +9,7 @@ export default function CostReason() {
         <div className="lg:col-span-4 lg:sticky lg:top-28">
           <Reveal>
             <p className="eyebrow">Reasonable, not cheap</p>
-            <h2 className="mt-5 h-display leading-[1.4] text-3xl sm:text-4xl">
+            <h2 className="mt-5 h-display text-3xl/[1.4] sm:text-4xl/[1.4]">
               {cost.title.map((t) => (
                 <span key={t} className="block">
                   {t}

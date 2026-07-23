@@ -10,7 +10,7 @@ export default function TrustPromise() {
           <div className="lg:col-span-5">
             <Reveal>
               <p className="eyebrow">Our promise</p>
-              <h2 className="mt-5 h-display leading-[1.4] text-3xl sm:text-4xl lg:text-[2.6rem]">
+              <h2 className="mt-5 h-display text-3xl/[1.4] sm:text-4xl/[1.4] lg:text-[2.6rem]/[1.4]">
                 합리적인 비용일수록
                 <br />
                 과정은 더 투명하게
