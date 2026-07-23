@@ -56,7 +56,8 @@ export const stats: {
   icon: "brands" | "sales" | "conversion";
 }[] = [
   { value: "100", suffix: "+", label: "런칭 브랜드", icon: "brands" },
-  { value: "", label: "누적 판매량", emphasized: true, icon: "sales" },
+  // TODO: 누적 판매량 실제 수치로 교체 (아래 1,200은 임시값)
+  { value: "1,200", suffix: "+", label: "누적 판매량", emphasized: true, icon: "sales" },
   {
     value: "95",
     suffix: "%",

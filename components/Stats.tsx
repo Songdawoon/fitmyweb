@@ -20,9 +20,21 @@ export default function Stats() {
               // center highlight — white panel, like the reference layout
               return (
                 <Reveal key={s.label} delay={i * 0.08}>
-                  <div className="flex flex-col items-center justify-center rounded-2xl bg-paper px-8 py-12 text-center">
-                    <Icon size={40} weight="thin" className="text-ink/70" />
-                    <p className="mt-4 text-lg font-semibold tracking-tight text-accent">
+                  <div className="flex flex-col items-center justify-center rounded-2xl bg-paper px-8 py-10 text-center">
+                    <Icon size={64} weight="light" className="text-accent" />
+                    {s.value && (
+                      <div className="mt-4 flex items-baseline gap-0.5">
+                        <span className="font-display text-5xl font-extrabold tracking-tightest text-ink sm:text-6xl">
+                          {s.value}
+                        </span>
+                        {s.suffix && (
+                          <span className="font-display text-3xl font-bold text-accent">
+                            {s.suffix}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <p className="mt-3 text-lg font-semibold tracking-tight text-accent">
                       {s.label}
                     </p>
                   </div>
@@ -33,7 +45,7 @@ export default function Stats() {
             return (
               <Reveal key={s.label} delay={i * 0.08}>
                 <div className="flex flex-col items-center text-center">
-                  <Icon size={34} weight="thin" className="text-paper/45" />
+                  <Icon size={52} weight="light" className="text-paper/55" />
                   <div className="mt-4 flex items-baseline gap-0.5">
                     <span className="font-display text-5xl font-extrabold tracking-tightest text-paper sm:text-6xl">
                       {s.value}

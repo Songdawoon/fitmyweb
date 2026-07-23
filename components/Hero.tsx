@@ -11,6 +11,7 @@ import {
   Lifebuoy,
 } from "@phosphor-icons/react";
 import { brand } from "@/lib/data";
+import HeroGallery from "./HeroGallery";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -29,8 +30,9 @@ export default function Hero() {
       <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-mist to-paper" />
 
       <div className="container-page section-x pb-16 pt-10 sm:pb-20">
-        {/* headline block — left aligned, right side intentionally open */}
-        <div className="max-w-3xl">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:items-center">
+          {/* headline block */}
+          <div className="lg:col-span-7">
           <motion.p
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
@@ -95,6 +97,17 @@ export default function Hero() {
             >
               포트폴리오 보기
             </Link>
+          </motion.div>
+          </div>
+
+          {/* auto-playing card gallery */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease, delay: 0.4 }}
+            className="lg:col-span-5"
+          >
+            <HeroGallery />
           </motion.div>
         </div>
 
