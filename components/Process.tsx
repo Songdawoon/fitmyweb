@@ -9,7 +9,7 @@ export default function Process() {
       <div className="container-page section-x py-24 sm:py-32">
         <Reveal>
           <p className="eyebrow">Process</p>
-          <h2 className="mt-5 h-display text-3xl/[1.4] text-paper sm:text-4xl/[1.4] lg:text-[2.75rem]/[1.4]">
+          <h2 className="mt-5 h-display text-3xl/[1.3] text-paper sm:text-4xl/[1.3] lg:text-[2.75rem]/[1.3]">
             체계적인 과정이
             <br />
             좋은 결과를 만듭니다

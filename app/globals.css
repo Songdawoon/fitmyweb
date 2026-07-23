@@ -28,7 +28,7 @@ body {
     @apply inline-flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[0.22em] text-accent;
   }
   .h-display {
-    @apply font-sans font-extrabold leading-[1.34] tracking-tightest text-ink;
+    @apply font-sans font-extrabold leading-[1.3] tracking-tightest text-ink;
     word-break: keep-all;
   }
   /* thin focus ring for form controls */

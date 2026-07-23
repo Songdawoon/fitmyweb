@@ -15,7 +15,7 @@ export default function SectionHeading({
     <Reveal>
       <div className={align === "center" ? "mx-auto max-w-2xl text-center" : ""}>
         <p className="eyebrow">{eyebrow}</p>
-        <h2 className="mt-5 h-display text-3xl/[1.4] sm:text-4xl/[1.4] lg:text-[2.75rem]/[1.4]">
+        <h2 className="mt-5 h-display text-3xl/[1.3] sm:text-4xl/[1.3] lg:text-[2.75rem]/[1.3]">
           {title.map((t) => (
             <span key={t} className="block">
               {t}

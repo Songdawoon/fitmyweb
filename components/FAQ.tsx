@@ -13,7 +13,7 @@ export default function FAQ() {
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
         <div className="lg:col-span-4">
           <p className="eyebrow">FAQ</p>
-          <h2 className="mt-5 h-display text-3xl/[1.4] sm:text-4xl/[1.4]">
+          <h2 className="mt-5 h-display text-3xl/[1.3] sm:text-4xl/[1.3]">
             자주 묻는
             <br />
             질문
