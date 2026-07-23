@@ -27,18 +27,10 @@ export const heroAssurances = [
 // 히어로 아래 신뢰 배너 — 확정된 사실만 사용 (허위 수치 미노출).
 export const assuranceMetrics: {
   value: string;
-  suffix?: string;
   label: string;
-  emphasized?: boolean;
-  icon: "price" | "warranty" | "refund";
+  icon: "warranty" | "refund";
 }[] = [
-  { value: "99만원", suffix: "~", label: "커스텀 홈페이지 시작가", icon: "price" },
-  {
-    value: "6개월",
-    label: "워런티 · 제작 범위 내 기능 오류 무상 보수",
-    emphasized: true,
-    icon: "warranty",
-  },
+  { value: "6개월", label: "워런티 · 제작 범위 내 기능 오류 무상 보수", icon: "warranty" },
   { value: "전액 환불", label: "불만족 시 환불 보장", icon: "refund" },
 ];
 
