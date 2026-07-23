@@ -2,26 +2,11 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import {
-  ArrowRight,
-  Compass,
-  Devices,
-  Receipt,
-  SlidersHorizontal,
-  Lifebuoy,
-} from "@phosphor-icons/react";
+import { ArrowRight } from "@phosphor-icons/react";
 import { brand } from "@/lib/data";
 import HeroStats from "./HeroStats";
 
 const ease = [0.16, 1, 0.3, 1] as const;
-
-const capabilities = [
-  { label: "맞춤 기획", Icon: Compass },
-  { label: "반응형 제작", Icon: Devices },
-  { label: "투명한 견적", Icon: Receipt },
-  { label: "직접 관리", Icon: SlidersHorizontal },
-  { label: "제작 후 안내", Icon: Lifebuoy },
-];
 
 export default function Hero() {
   return (
@@ -109,24 +94,6 @@ export default function Hero() {
           >
             <HeroStats />
           </motion.div>
-        </div>
-
-        {/* capability strip — trust keywords as an icon + label row, full width */}
-        <div className="mt-16 grid grid-cols-2 gap-x-6 gap-y-8 border-t border-line pt-10 sm:grid-cols-3 lg:grid-cols-5">
-          {capabilities.map(({ label, Icon }, i) => (
-            <motion.div
-              key={label}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease, delay: 0.55 + i * 0.07 }}
-              className="flex flex-col items-center gap-3 text-center"
-            >
-              <span className="grid h-12 w-12 place-items-center rounded-full border border-line bg-paper text-accent">
-                <Icon size={22} weight="bold" />
-              </span>
-              <span className="text-[15px] font-medium text-ink">{label}</span>
-            </motion.div>
-          ))}
         </div>
       </div>
     </section>
