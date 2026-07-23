@@ -46,6 +46,26 @@ export const assuranceMetrics: {
 export const assuranceNote =
   "워런티와 환불의 적용 시점·범위·제외 조건은 계약 시 안내됩니다.";
 
+// 실적 지표 — 운영자가 검증했다고 확인한 값. 변경 시 여기만 수정.
+export const stats: {
+  value: string;
+  suffix?: string;
+  label: string;
+  note?: string;
+  emphasized?: boolean;
+  icon: "brands" | "sales" | "conversion";
+}[] = [
+  { value: "100", suffix: "+", label: "런칭 브랜드", icon: "brands" },
+  { value: "", label: "누적 판매량", emphasized: true, icon: "sales" },
+  {
+    value: "95",
+    suffix: "%",
+    label: "오픈 1달 이내 문의·주문 경험 비율",
+    note: "네이버·구글 SEO 연동 기준",
+    icon: "conversion",
+  },
+];
+
 export const problem = {
   title: ["좋은 홈페이지는", "우리 사업을 정확하게 보여줘야 합니다"],
   questions: [
