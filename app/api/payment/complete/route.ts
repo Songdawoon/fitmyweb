@@ -1,18 +1,20 @@
 import { NextResponse } from "next/server";
-import { getPlan } from "@/lib/data";
+import { verifyPayment, recordOrder } from "@/lib/portone";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 /**
- * Server-side payment verification.
+ * 결제창이 닫힌 뒤 브라우저가 호출하는 결제 확인 엔드포인트.
  *
- * The browser only knows a paymentId. Never trust the amount from the client —
- * we re-fetch the payment from PortOne and compare the paid amount against the
- * plan's real price. This is what prevents a user from tampering totalAmount.
+ * 클라이언트가 보내는 값은 imp_uid 뿐이며, 금액과 플랜은 포트원에서 다시
+ * 조회한 결제 건을 기준으로 판단합니다(lib/portone.ts).
  *
- * Docs: GET https://api.portone.io/payments/{paymentId}
- *       Authorization: PortOne {API_SECRET}
+ * 사용자가 결제 직후 브라우저를 닫으면 이 호출이 유실될 수 있으므로,
+ * 주문 확정의 최종 보증은 웹훅(/api/payment/webhook)이 담당합니다.
  */
 export async function POST(req: Request) {
-  let body: { paymentId?: string; planId?: string };
+  let body: { impUid?: string };
   try {
     body = await req.json();
   } catch {
@@ -22,78 +24,48 @@ export async function POST(req: Request) {
     );
   }
 
-  const { paymentId, planId } = body;
-  const plan = getPlan(planId);
-
-  if (!paymentId || !plan) {
+  const impUid = typeof body.impUid === "string" ? body.impUid.trim() : "";
+  if (!impUid) {
     return NextResponse.json(
       { status: "failed", message: "결제 정보를 확인할 수 없습니다." },
       { status: 400 },
     );
   }
 
-  const secret = process.env.PORTONE_API_SECRET;
+  const result = await verifyPayment(impUid);
 
-  // ── Placeholder / test mode ────────────────────────────────────────
-  // No real secret yet: accept the payment but flag it as unverified so the
-  // UI can be honest about it. Wire PORTONE_API_SECRET to enable real checks.
-  if (!secret || secret.startsWith("your-")) {
-    return NextResponse.json({
-      status: "paid",
-      verified: false,
-      mode: "placeholder",
-      paymentId,
-    });
-  }
-
-  // ── Real verification ──────────────────────────────────────────────
-  try {
-    const res = await fetch(
-      `https://api.portone.io/payments/${encodeURIComponent(paymentId)}`,
-      { headers: { Authorization: `PortOne ${secret}` }, cache: "no-store" },
-    );
-
-    if (!res.ok) {
-      return NextResponse.json(
-        { status: "failed", message: "결제 조회에 실패했습니다." },
-        { status: 502 },
-      );
-    }
-
-    const payment = await res.json();
-    const paidAmount = payment?.amount?.total;
-    const paidStatus = payment?.status;
-
-    // Amount must match the plan price exactly.
-    if (paidAmount !== plan.price) {
-      return NextResponse.json(
-        {
-          status: "failed",
-          message: "결제 금액이 일치하지 않습니다.",
-        },
-        { status: 400 },
-      );
-    }
-
-    if (paidStatus !== "PAID") {
-      return NextResponse.json({
-        status: "pending",
-        verified: false,
-        paymentStatus: paidStatus,
-        paymentId,
-      });
-    }
-
-    // TODO: persist the order here (DB) before responding in production.
-    return NextResponse.json({
-      status: "paid",
-      verified: true,
-      paymentId,
-    });
-  } catch {
+  if (result.status === "failed") {
     return NextResponse.json(
-      { status: "failed", message: "결제 검증 중 오류가 발생했습니다." },
-      { status: 500 },
+      { status: "failed", verified: false, message: result.message },
+      { status: result.httpStatus },
     );
   }
+
+  if (result.status === "pending") {
+    return NextResponse.json({
+      status: "pending",
+      verified: false,
+      impUid: result.impUid,
+      paymentStatus: result.paymentStatus,
+      message: result.message,
+    });
+  }
+
+  recordOrder({
+    source: "client",
+    impUid: result.impUid,
+    merchantUid: result.merchantUid,
+    plan: result.plan,
+    amount: result.amount,
+    meta: result.meta,
+  });
+
+  return NextResponse.json({
+    status: "paid",
+    verified: true,
+    impUid: result.impUid,
+    merchantUid: result.merchantUid,
+    planId: result.plan.id,
+    amount: result.amount,
+  });
 }

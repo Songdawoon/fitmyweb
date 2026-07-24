@@ -29,8 +29,9 @@ export default function CheckoutPage({
       {plan && plan.payable ? (
         <CheckoutClient
           plan={plan}
-          storeId={process.env.NEXT_PUBLIC_PORTONE_STORE_ID ?? ""}
+          impCode={process.env.NEXT_PUBLIC_PORTONE_IMP_CODE ?? ""}
           channelKey={process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY ?? ""}
+          pg={process.env.NEXT_PUBLIC_PORTONE_PG ?? ""}
         />
       ) : (
         <section className="container-page section-x py-24 text-center">
