@@ -350,6 +350,19 @@ export const faqs = [
   },
 ];
 
+// 홈 첫 진입 시 노출되는 쿠폰 안내 팝업 카피.
+// 현재는 안내 전용이며 실제 쿠폰 발급 시스템과 연결되어 있지 않다.
+export const couponPromo = {
+  badge: "고객님 Only",
+  sideLeft: ["한정", "쿠폰"],
+  sideRight: ["발급", "안내"],
+  amountLabel: "최대",
+  amount: 26_000,
+  cta: "쿠폰받기",
+  notice:
+    "회원가입 및 본인인증 완료 후 지급되며, 구매 이력이 없는 고객님 한정 쿠폰 입니다.",
+};
+
 export const budgetOptions = [
   "100만원 미만",
   "100만~150만원",
@@ -379,6 +392,11 @@ export function formatKRW(value: number): string {
 
 export function formatManwon(value: number): string {
   return (value / 10_000).toLocaleString("ko-KR") + "만원";
+}
+
+/** 990000 → "990,000원". 작은 글씨 안내문처럼 ₩ 기호 없이 쓸 때. */
+export function formatWon(value: number): string {
+  return value.toLocaleString("ko-KR") + "원";
 }
 
 export function getPlan(id: string | null | undefined): Plan | undefined {
