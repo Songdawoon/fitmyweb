@@ -350,6 +350,28 @@ export const faqs = [
   },
 ];
 
+// 홈 첫 진입 시 노출되는 쿠폰 안내 팝업 카피.
+// 현재는 안내 전용이며 실제 쿠폰 발급 시스템과 연결되어 있지 않다.
+export const couponPromo = {
+  badge: "고객님 Only",
+  sideLeft: ["한정", "쿠폰"],
+  sideRight: ["발급", "안내"],
+  amountLabel: "최대",
+  amount: 26_000,
+  cta: "쿠폰받기",
+  notice:
+    "회원가입 및 본인인증 완료 후 지급되며, 구매 이력이 없는 고객님 한정 쿠폰 입니다.",
+};
+
+// 홈 우하단 플로팅 상담 버튼. 페이지 내 #contact 폼과 달리 카카오톡 채널로
+// 바로 연결되는 즉시 상담 경로다.
+export const kakaoConsult = {
+  url: "https://pf.kakao.com/_xjxixbZX/chat",
+  label: "카카오톡 상담하기",
+  // 데스크톱에서 버튼 왼쪽에 붙는 짧은 안내. 모바일은 공간이 없어 숨긴다.
+  tooltip: "1:1 상담",
+};
+
 export const budgetOptions = [
   "100만원 미만",
   "100만~150만원",
@@ -379,6 +401,11 @@ export function formatKRW(value: number): string {
 
 export function formatManwon(value: number): string {
   return (value / 10_000).toLocaleString("ko-KR") + "만원";
+}
+
+/** 990000 → "990,000원". 작은 글씨 안내문처럼 ₩ 기호 없이 쓸 때. */
+export function formatWon(value: number): string {
+  return value.toLocaleString("ko-KR") + "원";
 }
 
 export function getPlan(id: string | null | undefined): Plan | undefined {
