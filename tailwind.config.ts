@@ -19,6 +19,10 @@ const config: Config = {
         // Single vivid brand accent.
         accent: "#f05540",
         "accent-ink": "#c8402d",
+        // KakaoTalk brand pair — 채널 버튼은 가이드라인상 옐로우 배경 + 검정 심볼
+        // 조합을 유지해야 해서 팔레트 밖 색이지만 별도 토큰으로 둔다.
+        kakao: "#FEE500",
+        "kakao-ink": "#191600",
       },
       fontFamily: {
         sans: ["Pretendard Variable", "Pretendard", "system-ui", "sans-serif"],

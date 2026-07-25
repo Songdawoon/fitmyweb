@@ -363,6 +363,15 @@ export const couponPromo = {
     "회원가입 및 본인인증 완료 후 지급되며, 구매 이력이 없는 고객님 한정 쿠폰 입니다.",
 };
 
+// 홈 우하단 플로팅 상담 버튼. 페이지 내 #contact 폼과 달리 카카오톡 채널로
+// 바로 연결되는 즉시 상담 경로다.
+export const kakaoConsult = {
+  url: "https://pf.kakao.com/_xjxixbZX/chat",
+  label: "카카오톡 상담하기",
+  // 데스크톱에서 버튼 왼쪽에 붙는 짧은 안내. 모바일은 공간이 없어 숨긴다.
+  tooltip: "1:1 상담",
+};
+
 export const budgetOptions = [
   "100만원 미만",
   "100만~150만원",
