@@ -202,6 +202,14 @@ export type PortfolioItem = {
 // 새 사례는 맨 앞에 추가하면 최신순으로 노출되고, category 만 맞추면 필터에 자동 반영된다.
 export const portfolioSamples: PortfolioItem[] = [
   {
+    title: "사진 수백 장에서 쓸 컷만 골라 영상까지 만들어주는 AI 서비스 소개",
+    industry: "AI 사진 선별 · 영상 자동 생성",
+    focus: "요금 계산기 · 샘플 신청 동선",
+    category: "etc",
+    url: "https://fitmyweb-portfolio-16.vercel.app",
+    image: "/portfolio/acut.jpg",
+  },
+  {
     title: "한정 신상빵과 매일 파는 빵을 나눠 보여주는 베이커리 사이트",
     industry: "베이커리 · 5개 지점",
     focus: "신상빵 확인 → 매장 찾기",
