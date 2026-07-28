@@ -30,9 +30,9 @@ export const assuranceMetrics: {
   label: string;
   icon: "warranty" | "refund";
 }[] = [
-  { value: "6개월", label: "워런티 · 제작 범위 내 기능 오류 무상 보수", icon: "warranty" },
-  { value: "전액 환불", label: "불만족 시 환불 보장", icon: "refund" },
-];
+    { value: "6개월", label: "워런티 · 제작 범위 내 기능 오류 무상 보수", icon: "warranty" },
+    { value: "전액 환불", label: "불만족 시 환불 보장", icon: "refund" },
+  ];
 
 // 전액 환불/워런티는 실제 적용 조건 확정 후 표기해야 함 (기획서 §9).
 export const assuranceNote =
@@ -47,17 +47,17 @@ export const stats: {
   emphasized?: boolean;
   icon: "brands" | "sales" | "conversion";
 }[] = [
-  { value: "100", suffix: "+", label: "런칭 브랜드", icon: "brands" },
-  // TODO: 누적 판매량 실제 수치로 교체 (아래 1,200은 임시값)
-  { value: "1,200", suffix: "+", label: "누적 판매량", emphasized: true, icon: "sales" },
-  {
-    value: "95",
-    suffix: "%",
-    label: "오픈 1달 이내 문의·주문 경험 비율",
-    note: "네이버·구글 SEO 연동 기준",
-    icon: "conversion",
-  },
-];
+    { value: "100", suffix: "+", label: "런칭 브랜드", icon: "brands" },
+    // TODO: 누적 판매량 실제 수치로 교체 (아래 1,200은 임시값)
+    { value: "1,200", suffix: "+", label: "누적 판매량", emphasized: true, icon: "sales" },
+    {
+      value: "95",
+      suffix: "%",
+      label: "오픈 1달 이내 문의·주문 경험 비율",
+      note: "네이버·구글 SEO 연동 기준",
+      icon: "conversion",
+    },
+  ];
 
 export const problem = {
   title: ["좋은 홈페이지는", "우리 사업을 정확하게 보여줘야 합니다"],
@@ -169,27 +169,189 @@ export const steps: Step[] = [
   { no: "08", title: "운영 안내", desc: "고객이 직접 수정하고 관리할 수 있도록 기본적인 운영 방법을 안내합니다.", phase: "오픈" },
 ];
 
-// 실제 사례가 준비되기 전의 자리표시 항목. 허구 회사명·수치를 실제처럼 노출하지 않는다.
-export const portfolioSamples = [
+export type PortfolioCategory = "shop" | "brand" | "clinic" | "etc";
+
+/** 포트폴리오 필터 탭. "all" 은 기본 선택 상태로 전체를 보여준다. */
+export const portfolioCategories: {
+  id: PortfolioCategory | "all";
+  label: string;
+}[] = [
+  { id: "all", label: "전체" },
+  { id: "shop", label: "쇼핑몰" },
+  { id: "brand", label: "브랜드" },
+  { id: "clinic", label: "병원" },
+  { id: "etc", label: "기타" },
+];
+
+export type PortfolioItem = {
+  title: string;
+  industry: string;
+  focus: string;
+  category: PortfolioCategory;
+  /** 공개된 실제 사례만 채운다. 값이 있으면 카드가 링크로 바뀌고 "준비 중" 대신
+   *  사이트 보기 안내가 노출된다. */
+  url?: string;
+  /**
+   * 썸네일 경로 (public 기준). 카드가 aspect-[16/10] 이라 같은 비율로 넣어야
+   * 잘리지 않는다. 캡처 방법은 README 의 "포트폴리오 추가" 참고.
+   */
+  image?: string;
+};
+
+// 공개된 실제 사례만 넣는다. 허구 회사명·수치를 실제처럼 노출하지 않는다.
+// 새 사례는 맨 앞에 추가하면 최신순으로 노출되고, category 만 맞추면 필터에 자동 반영된다.
+export const portfolioSamples: PortfolioItem[] = [
   {
-    title: "복잡했던 기업 정보를 고객이 이해하기 쉬운 구조로",
-    industry: "제조기업",
-    focus: "정보 구조 재설계",
+    title: "한정 신상빵과 매일 파는 빵을 나눠 보여주는 베이커리 사이트",
+    industry: "베이커리 · 5개 지점",
+    focus: "신상빵 확인 → 매장 찾기",
+    category: "brand",
+    url: "https://bbangman.vercel.app",
+    image: "/portfolio/bbangman.jpg",
   },
   {
-    title: "전문 서비스의 신뢰를 높이는 상담 중심 홈페이지",
-    industry: "전문 서비스",
-    focus: "상담 전환 동선",
+    title: "돈코츠 대신 닭육수를 내세워 설명하는 동네 라멘집 사이트",
+    industry: "일본식 라멘 전문점",
+    focus: "메뉴 확인 → 길찾기 동선",
+    category: "brand",
+    url: "https://fitmyweb-portfolio14.vercel.app",
+    image: "/portfolio/ramenkami.jpg",
   },
   {
-    title: "제품의 기술력을 효과적으로 전달하는 제조기업 홈페이지",
-    industry: "제조기업",
-    focus: "기술 콘텐츠 정리",
+    title: "세 자매를 각자의 색으로 소개하는 캐릭터 브랜드 사이트",
+    industry: "캐릭터 · 퍼스널 브랜드",
+    focus: "캐릭터별 소개 동선",
+    category: "brand",
+    url: "https://hereiam.synology.me:666",
+    image: "/portfolio/trinityha.jpg",
   },
   {
-    title: "브랜드의 분위기와 상품을 함께 보여주는 온라인 사이트",
-    industry: "브랜드 커머스",
-    focus: "브랜드 톤 & 상품",
+    title: "선교사의 쉼터와 이동 지원을 한곳에 모은 커뮤니티 포탈",
+    industry: "커뮤니티 포탈",
+    focus: "구글 로그인 · 회원 전용",
+    category: "etc",
+    url: "https://hereiam.synology.me:555",
+    image: "/portfolio/geoham.jpg",
+  },
+  {
+    title: "40년 토션 기술을 특허와 인증으로 함께 보여주는 제조기업 홈페이지",
+    industry: "토션 부품 제조",
+    focus: "제품군 · 특허 인증 안내",
+    category: "etc",
+    url: "https://hereiam.synology.me:444",
+    image: "/portfolio/torsionpia.jpg",
+  },
+  {
+    title: "사흘을 말리는 과정부터 보여주고 파는 수제 국수 자사몰",
+    industry: "수제 국수 커머스",
+    focus: "제조 과정 · 주문 동선",
+    category: "shop",
+    url: "https://hanol-noodle.vercel.app",
+    image: "/portfolio/hanol.jpg",
+  },
+  {
+    title: "세계관과 시리즈로 골라 담게 만든 미니피규어 편집숍",
+    industry: "미니피규어 커머스",
+    focus: "컬렉션 필터 · 정렬 동선",
+    category: "shop",
+    url: "https://brickfigs-store.vercel.app",
+    image: "/portfolio/brickfigs.jpg",
+  },
+  {
+    title: "한 번에 한 품목만 만드는 이유부터 설명하는 오브제 브랜드",
+    industry: "디자인 오브제",
+    focus: "재료 · 제작 과정 안내",
+    category: "shop",
+    url: "https://yeobaek-blond.vercel.app",
+    image: "/portfolio/yeobaek.jpg",
+  },
+  {
+    title: "브라우저에서 바로 얹어 보고 주문하는 굿즈 제작 사이트",
+    industry: "주문 제작 굿즈",
+    focus: "굿즈 에디터 화면",
+    category: "shop",
+    url: "https://morupress-goods-editor.vercel.app",
+    image: "/portfolio/morupress.jpg",
+  },
+  {
+    title: "진단·치료·재활을 한 흐름으로 잇는 정형외과 홈페이지",
+    industry: "정형외과의원",
+    focus: "부위별 진료 안내",
+    category: "clinic",
+    url: "https://ieumbon-orthopedic-clinic.vercel.app",
+    image: "/portfolio/ieumbon.jpg",
+  },
+  {
+    title: "부품 교체 전에 원인부터 찾는 노트북 수리 서비스",
+    industry: "노트북 수리",
+    focus: "증상별 접수 동선",
+    category: "etc",
+    url: "https://corefix-lab.vercel.app",
+    image: "/portfolio/corefix.jpg",
+  },
+  {
+    title: "부위와 식감을 기준으로 고르게 만든 직화 닭구이 브랜드",
+    industry: "외식 프랜차이즈",
+    focus: "고객·창업 동선 분리",
+    category: "etc",
+    url: "https://hwarodam-chicken-grill.vercel.app",
+    image: "/portfolio/hwarodam.jpg",
+  },
+  {
+    title: "아픈 부위만이 아니라 움직임과 생활까지 다루는 통증재활의원",
+    industry: "통증재활의원",
+    focus: "증상 확인 → 예약 동선",
+    category: "clinic",
+    url: "https://ongyeol-pain-rehab-clinic.vercel.app",
+    image: "/portfolio/ongyeol.jpg",
+  },
+  {
+    title: "공간을 먼저 확인하고 구성을 제안하는 모듈 수납 브랜드",
+    industry: "모듈 수납 가구",
+    focus: "구성 도구 · 실측 상담",
+    category: "brand",
+    url: "https://layerroom-modular-storage.vercel.app",
+    image: "/portfolio/layerroom.jpg",
+  },
+  {
+    title: "메뉴가 아니라 취향으로 고르게 만든 카페 브랜드 사이트",
+    industry: "카페 · 프랜차이즈",
+    focus: "고객·예비점주 분리",
+    category: "brand",
+    url: "https://notebean-coffee.vercel.app",
+    image: "/portfolio/notebean.jpg",
+  },
+  {
+    title: "목적과 배송 요일로 30초 만에 고르는 정기배송 사이트",
+    industry: "건강식 정기배송",
+    focus: "구독 플랜 선택 동선",
+    category: "shop",
+    url: "https://fitmyweb-portfolio04.vercel.app",
+    image: "/portfolio/mealleaf.jpg",
+  },
+  {
+    title: "객실이 아니라 여행 목적으로 고르게 만든 리조트 예약 사이트",
+    industry: "리조트 · 숙박",
+    focus: "목적별 예약 동선",
+    category: "etc",
+    url: "https://fitmyweb-portfolio03.vercel.app",
+    image: "/portfolio/foredam.jpg",
+  },
+  {
+    title: "흩어진 산지·시세 정보를 한곳에 모은 산업 플랫폼",
+    industry: "협회 · 산업 플랫폼",
+    focus: "데이터 구조 설계",
+    category: "etc",
+    url: "https://fitmyweb-portfolio02.vercel.app",
+    image: "/portfolio/kmhic.jpg",
+  },
+  {
+    title: "확인된 사실과 가능한 대응을 구분해 안내하는 법률사무소 홈페이지",
+    industry: "법률사무소",
+    focus: "상담 예약 동선",
+    category: "brand",
+    url: "https://fitmyweb-portfolio01.vercel.app",
+    image: "/portfolio/damyeon.jpg",
   },
 ];
 
@@ -299,27 +461,27 @@ export const testimonialSamples = [
   {
     heading: "회사의 강점을 잘 정리해주셨습니다",
     body: "기존 홈페이지가 오래되기도 했지만, 무엇보다 저희가 어떤 회사인지 제대로 전달되지 않는 것이 고민이었습니다. 처음 상담할 때 사업 내용과 주요 고객을 꼼꼼히 물어보시고, 어떤 내용을 먼저 보여줘야 하는지 구성부터 제안해주셨습니다.",
-    author: "제조업체 대표",
+    author: "경기 소재 산업용 부품 제조업체 김○○ 대표",
   },
   {
     heading: "생각했던 것보다 훨씬 전문적으로 완성됐어요",
     body: "처음에는 제작비가 합리적이라 완성도가 부족하지 않을까 걱정했습니다. 그런데 상담부터 디자인 시안, 수정 과정까지 체계적으로 진행되어 걱정이 금방 사라졌습니다. 모바일에서도 상담 신청이 편리하게 구성됐습니다.",
-    author: "영어학원 원장",
+    author: "서울 마포구 영어학원 이○○ 원장",
   },
   {
     heading: "요청한 내용만 만드는 업체와는 달랐습니다",
     body: "다른 업체는 페이지 수와 기능 이야기만 했는데, 마이핏웹은 저희 고객이 어떤 부분에서 신뢰를 느끼는지부터 질문해주셨습니다. 단순히 보기 좋은 홈페이지가 아니라 실제 상담으로 연결되는 구조를 만들어주셨습니다.",
-    author: "전문 컨설팅 업체 대표",
+    author: "기업경영 컨설팅사 박○○ 대표",
   },
   {
     heading: "저희 브랜드에 잘 맞는 홈페이지가 완성됐습니다",
     body: "참고 사이트를 그대로 따라 만드는 것이 아니라, 저희 브랜드에 어울리는 색상과 이미지 방향을 새롭게 제안해주셨습니다. 제작이 끝난 뒤에는 직접 수정하는 방법까지 알려주셔서 운영하기도 어렵지 않았습니다.",
-    author: "인테리어 디자인 업체 대표",
+    author: "주거공간 인테리어 스튜디오 최○○ 대표",
   },
   {
     heading: "비용과 제작 과정이 투명해서 믿을 수 있었습니다",
     body: "추가비용이 계속 발생하지 않을까 가장 걱정했는데, 상담 단계에서 포함되는 작업과 별도 비용을 정확히 설명해주셔서 예산을 정하기 쉬웠습니다. 합리적인 비용이었지만 결과물은 저렴한 홈페이지처럼 보이지 않았습니다.",
-    author: "온라인 브랜드 운영자",
+    author: "생활용품 온라인 브랜드 정○○ 대표",
   },
 ];
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle, SpinnerGap, ArrowRight } from "@phosphor-icons/react";
 import { brand, budgetOptions } from "@/lib/data";
+import DateField from "./DateField";
 
 type Form = {
   name: string;
@@ -70,7 +71,11 @@ export default function ContactForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      if (!res.ok) throw new Error("요청 처리에 실패했습니다.");
+      // 접수 실패 사유는 서버가 더 잘 안다(메일 발송 실패 등). 그대로 보여준다.
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.message ?? "요청 처리에 실패했습니다.");
+      }
       setStatus("success");
       setForm(empty);
     } catch (err) {
@@ -184,11 +189,10 @@ export default function ContactForm() {
           </select>
         </Field>
         <Field label="희망 오픈 일정" className="sm:col-span-2">
-          <input
-            className="field"
+          <DateField
             value={form.timeline}
-            onChange={(e) => set("timeline", e.target.value)}
-            placeholder="예: 다음 달 중, 미정"
+            onChange={(v) => set("timeline", v)}
+            placeholder="날짜를 선택하거나 직접 입력해 주세요"
           />
         </Field>
         <Field label="문의 내용" className="sm:col-span-2">

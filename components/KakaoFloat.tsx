@@ -83,10 +83,10 @@ export default function KakaoFloat() {
                   whileHover={{ scale: 1.08 }}
                   whileTap={{ scale: 0.95 }}
                   transition={spring}
-                  className="relative grid h-14 w-14 place-items-center rounded-full bg-kakao text-kakao-ink shadow-[0_18px_40px_-12px_rgba(16,23,51,0.45)] ring-0 transition-shadow duration-300 group-focus-visible:ring-2 group-focus-visible:ring-kakao-ink/40 group-focus-visible:ring-offset-2 sm:h-16 sm:w-16"
+                  className="relative grid h-28 w-28 place-items-center rounded-full bg-kakao text-kakao-ink shadow-[0_18px_40px_-12px_rgba(16,23,51,0.45)] ring-0 transition-shadow duration-300 group-focus-visible:ring-2 group-focus-visible:ring-kakao-ink/40 group-focus-visible:ring-offset-2 sm:h-32 sm:w-32"
                 >
-                  <ChatCircleDots size={28} weight="fill" className="sm:hidden" />
-                  <ChatCircleDots size={32} weight="fill" className="hidden sm:block" />
+                  <ChatCircleDots size={56} weight="fill" className="sm:hidden" />
+                  <ChatCircleDots size={64} weight="fill" className="hidden sm:block" />
                 </motion.span>
               </span>
             </a>

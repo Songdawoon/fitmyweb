@@ -43,7 +43,7 @@ export async function POST(req: Request) {
 
   switch (result.status) {
     case "paid":
-      recordOrder({
+      await recordOrder({
         source: "webhook",
         impUid: result.impUid,
         merchantUid: result.merchantUid,

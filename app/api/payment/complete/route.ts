@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     });
   }
 
-  recordOrder({
+  await recordOrder({
     source: "client",
     impUid: result.impUid,
     merchantUid: result.merchantUid,
