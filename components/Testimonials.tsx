@@ -7,11 +7,6 @@ export default function Testimonials() {
     <section className="container-page section-x py-24 sm:py-32">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <SectionHeading eyebrow="Voices" title={["제작을 경험한", "고객의 이야기"]} />
-        <Reveal>
-          <span className="inline-flex items-center rounded-full border border-line bg-mist px-3 py-1.5 text-[12px] font-medium text-muted">
-            후기 예시 · 실제 후기는 확보 후 교체됩니다
-          </span>
-        </Reveal>
       </div>
 
       <div className="mt-12 columns-1 gap-6 sm:columns-2 [&>*]:mb-6">

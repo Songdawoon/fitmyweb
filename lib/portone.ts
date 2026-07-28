@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getPlan, type Plan } from "@/lib/data";
+import { sendOrderMail, isEmailConfigured } from "@/lib/email";
 
 /**
  * PortOne V1(구 아임포트) 서버 연동 유틸.
@@ -247,11 +248,15 @@ export async function verifyPayment(impUid: string): Promise<VerifyOutcome> {
 /**
  * 확정된 주문 기록.
  *
- * 현재는 서버 로그로만 남깁니다. 운영 시 이 지점에서 DB 저장, 주문 확인 메일,
- * 슬랙 알림 등을 연결하세요. 결제 완료 라우트와 웹훅이 모두 호출하므로
- * 실제 저장소를 붙일 때는 imp_uid 기준 멱등 처리가 필요합니다.
+ * 서버 로그를 남기고 담당자에게 주문 확인 메일을 보냅니다. 로그는 보존되지 않으므로
+ * 실질적인 보존 수단은 메일입니다.
+ *
+ * 결제 완료 라우트와 웹훅이 모두 호출하기 때문에 정상 결제 한 건에 메일이 두 번
+ * 갈 수 있습니다. 중복 메일이 누락보다 낫다고 보고 그대로 두었습니다 — 제목의
+ * 주문번호가 같으므로 스레드로 묶여 보입니다. 실제 저장소를 붙일 때 imp_uid 기준
+ * 멱등 처리를 넣으면 자연스럽게 해소됩니다.
  */
-export function recordOrder(input: {
+export async function recordOrder(input: {
   source: "client" | "webhook";
   impUid: string;
   merchantUid: string;
@@ -269,4 +274,32 @@ export function recordOrder(input: {
       ? { name: input.meta.name, email: input.meta.email, phone: input.meta.phone }
       : null,
   });
+
+  if (!isEmailConfigured()) {
+    console.warn("[payment] 메일 설정이 없어 주문 확인 메일을 보내지 못했습니다:", input.impUid);
+    return;
+  }
+
+  const sent = await sendOrderMail({
+    planName: input.plan.name,
+    amount: input.amount,
+    impUid: input.impUid,
+    merchantUid: input.merchantUid,
+    source: input.source,
+    name: input.meta?.name,
+    email: input.meta?.email,
+    phone: input.meta?.phone,
+  });
+
+  // 메일이 실패해도 결제 자체는 이미 완료된 건이라 응답을 뒤집지 않는다.
+  // 대신 복구할 수 있도록 주문 정보를 에러 로그로 크게 남긴다.
+  if (!sent.ok) {
+    console.error("[payment] 주문 확인 메일 발송 실패 — 수동 확인 필요:", sent.reason, {
+      impUid: input.impUid,
+      merchantUid: input.merchantUid,
+      plan: input.plan.id,
+      amount: input.amount,
+      customer: input.meta,
+    });
+  }
 }
