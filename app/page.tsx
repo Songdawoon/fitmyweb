@@ -13,7 +13,7 @@ import Testimonials from "@/components/Testimonials";
 import FAQ from "@/components/FAQ";
 import FinalCTA from "@/components/FinalCTA";
 import Footer from "@/components/Footer";
-import CouponPopup from "@/components/CouponPopup";
+import LaunchPopup from "@/components/LaunchPopup";
 import KakaoFloat from "@/components/KakaoFloat";
 
 export default function Home() {
@@ -36,7 +36,7 @@ export default function Home() {
         <FinalCTA />
       </main>
       <Footer />
-      <CouponPopup />
+      <LaunchPopup />
       <KakaoFloat />
     </>
   );

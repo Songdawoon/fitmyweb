@@ -2,15 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, ArrowLineDown } from "@phosphor-icons/react";
+import Link from "next/link";
+import { X, ArrowRight } from "@phosphor-icons/react";
 import {
-  couponPromo,
-  couponTotalDiscount,
+  launchPromo,
+  launchTotalBenefit,
   plans,
   formatWon,
 } from "@/lib/data";
 
-const STORAGE_KEY = "myfitweb:coupon-dismissed-until";
+// 이벤트 개편으로 문구가 완전히 바뀌었으므로 키도 갈아끼워, 예전 팝업을
+// "오늘 하루 보지 않기"로 닫았던 방문자에게도 새 안내가 한 번은 노출되게 한다.
+const STORAGE_KEY = "myfitweb:launch-promo-dismissed-until";
 const OPEN_DELAY_MS = 1200;
 
 const spring = { type: "spring", stiffness: 120, damping: 20 } as const;
@@ -33,7 +36,7 @@ function planPriceLine(): string {
     .join(" · ");
 }
 
-export default function CouponPopup() {
+export default function LaunchPopup() {
   const [open, setOpen] = useState(false);
   const [dontShowToday, setDontShowToday] = useState(false);
 
@@ -106,7 +109,7 @@ export default function CouponPopup() {
           <motion.div
             role="dialog"
             aria-modal="true"
-            aria-labelledby="coupon-popup-title"
+            aria-labelledby="launch-popup-title"
             initial={{ scale: 0.95, y: 12 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.97, opacity: 0 }}
@@ -126,28 +129,28 @@ export default function CouponPopup() {
             {/* 모바일 — 좌우 텍스트를 한 줄로 대체.
                 말풍선이 카드 위로 겹쳐 올라오므로 그만큼 여백을 확보한다. */}
             <p
-              id="coupon-popup-title"
+              id="launch-popup-title"
               className="mb-14 text-center font-display text-2xl font-extrabold tracking-tight text-paper sm:hidden"
             >
-              {couponPromo.sideLeft.join(" ")} {couponPromo.sideRight.join(" ")}
+              {launchPromo.sideLeft.join(" ")} {launchPromo.sideRight.join(" ")}
             </p>
 
             <div className="grid grid-cols-1 items-center gap-5 sm:grid-cols-[1fr_auto_1fr] sm:gap-4">
-              {/* 좌측 — 한정 / 쿠폰 */}
+              {/* 좌측 — 런칭 / 기념 */}
               <div className="hidden text-right font-display text-[34px] font-extrabold leading-[1.15] tracking-tight text-paper sm:block">
-                {couponPromo.sideLeft.map((w) => (
+                {launchPromo.sideLeft.map((w) => (
                   <span key={w} className="block">
                     {w}
                   </span>
                 ))}
               </div>
 
-              {/* 중앙 — 쿠폰 카드 */}
+              {/* 중앙 — 혜택 금액 카드 */}
               <div className="relative mx-auto w-full max-w-[290px]">
-                {/* 고객님 Only 말풍선 */}
+                {/* 배지 말풍선 */}
                 <div className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 -translate-y-full">
                   <span className="relative block whitespace-nowrap rounded-full bg-[#0a0f22] px-4 py-2 text-[13px] font-bold text-paper">
-                    {couponPromo.badge}
+                    {launchPromo.badge}
                     <span
                       aria-hidden
                       className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-[6px] border-t-[7px] border-x-transparent border-t-[#0a0f22]"
@@ -159,11 +162,11 @@ export default function CouponPopup() {
                   {/* 금액이 6자리 이상이라 라벨을 윗줄로 올려 한 줄 폭을 확보한다. */}
                   <div className="px-5 text-center">
                     <p className="text-[14px] font-bold leading-tight text-ink">
-                      {couponPromo.amountLabel}
+                      {launchPromo.amountLabel}
                     </p>
                     <p className="mt-1 flex items-baseline justify-center gap-0.5">
                       <span className="font-display text-[40px] font-extrabold leading-none tracking-tightest text-ink">
-                        {couponTotalDiscount.toLocaleString("ko-KR")}
+                        {launchTotalBenefit.toLocaleString("ko-KR")}
                       </span>
                       <span className="text-[18px] font-extrabold text-ink">
                         원
@@ -173,14 +176,15 @@ export default function CouponPopup() {
 
                   <div className="mx-6 my-5 border-t border-dashed border-line" />
 
-                  {/* 안내 전용 — 실제 쿠폰 발급 없이 팝업만 닫는다. */}
-                  <button
+                  {/* 쿠폰 발급이 없는 이벤트라 상담 폼으로 보내고 팝업을 닫는다. */}
+                  <Link
+                    href={launchPromo.ctaHref}
                     onClick={close}
                     className="flex w-full items-center justify-center gap-2 px-5 pb-6 text-[17px] font-bold text-ink transition-colors hover:text-accent"
                   >
-                    <ArrowLineDown size={17} weight="bold" />
-                    {couponPromo.cta}
-                  </button>
+                    {launchPromo.cta}
+                    <ArrowRight size={17} weight="bold" />
+                  </Link>
 
                   {/* 하단 오렌지 바 + 중앙 노치 (카드 흰색이 파고드는 형태) */}
                   <div className="relative h-3.5 bg-accent">
@@ -192,9 +196,9 @@ export default function CouponPopup() {
                 </div>
               </div>
 
-              {/* 우측 — 발급 / 안내 */}
+              {/* 우측 — 혜택 / 안내 */}
               <div className="hidden font-display text-[34px] font-extrabold leading-[1.15] tracking-tight text-paper sm:block">
-                {couponPromo.sideRight.map((w) => (
+                {launchPromo.sideRight.map((w) => (
                   <span key={w} className="block">
                     {w}
                   </span>
@@ -202,9 +206,9 @@ export default function CouponPopup() {
               </div>
             </div>
 
-            {/* 쿠폰에 포함되는 유상 옵션 — 라벨과 정가를 나란히 보여준다. */}
+            {/* 이벤트로 무상 제공하는 유상 옵션 — 라벨과 정가를 나란히 보여준다. */}
             <ul className="mt-7 space-y-2">
-              {couponPromo.benefits.map((b) => (
+              {launchPromo.benefits.map((b) => (
                 <li
                   key={b.label}
                   className="flex items-center justify-between gap-3 rounded-xl bg-paper px-4 py-2.5"
@@ -222,7 +226,7 @@ export default function CouponPopup() {
             {/* 하단 작은 글씨 — 안내문 + 플랜 종류별 가격 */}
             <div className="mt-6 space-y-1.5 text-center">
               <p className="text-[12px] leading-relaxed text-paper/60">
-                {couponPromo.notice}
+                {launchPromo.notice}
               </p>
               <p className="text-[12px] leading-relaxed text-paper/60">
                 {planPriceLine()}

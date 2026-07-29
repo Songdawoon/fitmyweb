@@ -588,17 +588,19 @@ export const faqs = [
   },
 ];
 
-// 홈 첫 진입 시 노출되는 쿠폰 안내 팝업 카피.
-// 현재는 안내 전용이며 실제 쿠폰 발급 시스템과 연결되어 있지 않다.
-export const couponPromo = {
-  badge: "고객님 Only",
-  sideLeft: ["한정", "쿠폰"],
-  sideRight: ["발급", "안내"],
+// 홈 첫 진입 시 노출되는 런칭 기념 이벤트 팝업 카피.
+// 쿠폰 발급이 아니라 "제작 계약 시 유상 옵션 무상 제공" 안내이므로,
+// 회원가입·쿠폰 지급을 전제로 하는 문구를 쓰지 않는다.
+export const launchPromo = {
+  badge: "서비스 런칭 기념",
+  sideLeft: ["런칭", "기념"],
+  sideRight: ["혜택", "안내"],
   amountLabel: "총 할인",
-  cta: "쿠폰받기",
+  cta: "지금 상담 신청하기",
+  ctaHref: "/#contact",
   /**
-   * 쿠폰으로 무상 제공되는 유상 옵션. 카드의 총 할인액은 이 목록의 합계로
-   * 계산되므로(couponTotalDiscount), 항목만 고치면 금액이 따라 바뀐다.
+   * 이벤트로 무상 제공하는 유상 옵션. 카드의 총 할인액은 이 목록의 합계로
+   * 계산되므로(launchTotalBenefit), 항목만 고치면 금액이 따라 바뀐다.
    */
   benefits: [
     { label: "네이버 서치어드바이저 등록", value: 50_000 },
@@ -608,12 +610,13 @@ export const couponPromo = {
     { label: "소셜로그인", value: 300_000 },
     { label: "회원가입 5만원 쿠폰", value: 50_000 },
   ],
+  // TODO: 이벤트 종료일이 확정되면 문구에 기간을 넣는다.
   notice:
-    "회원가입 및 본인인증 완료 후 지급되며, 구매 이력이 없는 고객님 한정 쿠폰 입니다.",
+    "마이핏웹 서비스 런칭을 기념해, 이벤트 기간에 제작을 계약하신 고객께 위 유상 옵션을 무상으로 제공합니다.",
 };
 
-/** 쿠폰 카드에 표기하는 총 할인액 — 개별 혜택 금액의 합. */
-export const couponTotalDiscount = couponPromo.benefits.reduce(
+/** 이벤트 카드에 표기하는 총 할인액 — 개별 혜택 금액의 합. */
+export const launchTotalBenefit = launchPromo.benefits.reduce(
   (sum, b) => sum + b.value,
   0,
 );
