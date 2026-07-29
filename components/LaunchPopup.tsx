@@ -208,11 +208,19 @@ export default function LaunchPopup() {
             </ul>
 
             {/* 하단 작은 글씨 — 이벤트 안내문.
-                한글은 기본값이 음절 단위로 끊겨 "무상/으로" 처럼 단어가 갈라지므로
-                break-keep(어절 단위 줄바꿈) + text-balance(줄 길이 균등)로 잡는다. */}
+                sm 이상에서는 notice 배열의 줄 그대로(조건 / 결과) 끊고,
+                모바일에서는 한 줄이 폭을 넘겨 "계약하시면" 만 떨어지므로
+                인라인으로 풀어 자연스럽게 흐르게 둔다.
+                break-keep — 한글 기본 줄바꿈이 음절 단위라 "무상/으로" 처럼
+                단어가 갈라지는 것을 막는다. */}
             <div className="mt-6 text-center">
-              <p className="mx-auto max-w-[28rem] text-balance break-keep text-[12px] leading-relaxed text-paper/60">
-                {launchPromo.notice}
+              <p className="text-balance break-keep text-[12px] leading-relaxed text-paper/60">
+                {launchPromo.notice.map((line, i) => (
+                  <span key={line} className="sm:block">
+                    {i > 0 && " "}
+                    {line}
+                  </span>
+                ))}
               </p>
             </div>
 
