@@ -3,13 +3,23 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
-import { X, ArrowRight } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { X, ArrowRight, SpinnerGap, CheckCircle, Info } from "@phosphor-icons/react";
 import { launchPromo, launchTotalBenefit } from "@/lib/data";
 
 // 이벤트 개편으로 문구가 완전히 바뀌었으므로 키도 갈아끼워, 예전 팝업을
 // "오늘 하루 보지 않기"로 닫았던 방문자에게도 새 안내가 한 번은 노출되게 한다.
 const STORAGE_KEY = "myfitweb:launch-promo-dismissed-until";
 const OPEN_DELAY_MS = 1200;
+
+/**
+ * 로그인 후 되돌아올 주소. 이 값이 붙어 있으면 팝업을 지연 없이 열고
+ * 쿠폰 발급을 자동으로 이어서 진행한다 — 로그인하러 갔다가 돌아온 사람이
+ * 버튼을 한 번 더 누르게 만들지 않기 위함.
+ */
+const RESUME_PARAM = "coupon";
+const LOGIN_RETURN_URL = `/?${RESUME_PARAM}=1`;
 
 const spring = { type: "spring", stiffness: 120, damping: 20 } as const;
 
@@ -20,9 +30,21 @@ function nextMidnight(): number {
   return d.getTime();
 }
 
+/** 쿠폰 버튼 상태 — idle 외에는 버튼 자리에 결과를 보여준다. */
+type CouponState =
+  | { kind: "idle" }
+  | { kind: "loading" }
+  | { kind: "issued"; code: string }
+  | { kind: "already"; code: string; used: boolean }
+  | { kind: "error"; message: string };
+
 export default function LaunchPopup() {
   const [open, setOpen] = useState(false);
   const [dontShowToday, setDontShowToday] = useState(false);
+  const [coupon, setCoupon] = useState<CouponState>({ kind: "idle" });
+
+  const router = useRouter();
+  const { status: authStatus } = useSession();
 
   const closeRef = useRef<HTMLButtonElement>(null);
   const restoreFocusRef = useRef<Element | null>(null);
@@ -30,8 +52,59 @@ export default function LaunchPopup() {
   const dontShowRef = useRef(dontShowToday);
   dontShowRef.current = dontShowToday;
 
+  /**
+   * 쿠폰 발급 요청. 계정당 1장이라는 판정은 서버가 한다.
+   * 401 이면 로그인 페이지로 보내고, 돌아오면 이어서 발급되도록 주소를 넘긴다.
+   */
+  const claimCoupon = useCallback(async () => {
+    setCoupon({ kind: "loading" });
+    try {
+      const res = await fetch("/api/coupon", { method: "POST" });
+
+      if (res.status === 401) {
+        router.push(`/login?callbackUrl=${encodeURIComponent(LOGIN_RETURN_URL)}`);
+        return;
+      }
+
+      const data = await res.json().catch(() => null);
+
+      if (data?.status === "issued") {
+        setCoupon({ kind: "issued", code: data.code });
+        return;
+      }
+      if (data?.status === "already") {
+        setCoupon({ kind: "already", code: data.code, used: Boolean(data.usedAt) });
+        return;
+      }
+
+      setCoupon({
+        kind: "error",
+        message:
+          data?.status === "unavailable"
+            ? launchPromo.couponMessages.unavailable
+            : launchPromo.couponMessages.error,
+      });
+    } catch {
+      setCoupon({ kind: "error", message: launchPromo.couponMessages.error });
+    }
+  }, [router]);
+
   // 지연 노출 — 첫 화면이 그려진 뒤에 띄운다.
+  // 단, 로그인 후 되돌아온 경우(?coupon=1)에는 "오늘 하루 보지 않기" 와
+  // 지연을 모두 무시하고 즉시 열어 발급을 이어간다.
+  const resumedRef = useRef(false);
   useEffect(() => {
+    const resuming =
+      new URLSearchParams(window.location.search).get(RESUME_PARAM) === "1";
+
+    if (resuming) {
+      // 새로고침해도 다시 발급 시도하지 않도록 파라미터를 지운다.
+      window.history.replaceState({}, "", window.location.pathname);
+      resumedRef.current = true;
+      setOpen(true);
+      return;
+    }
+
     let stored: string | null = null;
     try {
       stored = window.localStorage.getItem(STORAGE_KEY);
@@ -44,6 +117,15 @@ export default function LaunchPopup() {
     const timer = window.setTimeout(() => setOpen(true), OPEN_DELAY_MS);
     return () => window.clearTimeout(timer);
   }, []);
+
+  // 로그인 후 복귀 — 세션이 확정되는 즉시 한 번만 발급을 시도한다.
+  useEffect(() => {
+    if (!resumedRef.current) return;
+    if (authStatus === "loading") return;
+
+    resumedRef.current = false;
+    if (authStatus === "authenticated") void claimCoupon();
+  }, [authStatus, claimCoupon]);
 
   const close = useCallback(() => {
     if (dontShowRef.current) {
@@ -160,15 +242,42 @@ export default function LaunchPopup() {
 
                   <div className="mx-6 my-5 border-t border-dashed border-line" />
 
-                  {/* 쿠폰 발급이 없는 이벤트라 상담 폼으로 보내고 팝업을 닫는다. */}
-                  <Link
-                    href={launchPromo.ctaHref}
-                    onClick={close}
-                    className="flex w-full items-center justify-center gap-2 px-5 pb-6 text-[17px] font-bold text-ink transition-colors hover:text-accent"
-                  >
-                    {launchPromo.cta}
-                    <ArrowRight size={17} weight="bold" />
-                  </Link>
+                  {/*
+                    쿠폰 발급 버튼.
+                    비로그인 판정은 클라이언트가 아니라 서버(401)가 한다 —
+                    세션 로딩 중에 버튼을 막아 두면 눌러도 반응이 없는 것처럼
+                    보이고, 어차피 발급 권한은 서버가 확인해야 하기 때문.
+                  */}
+                  <div className="px-5 pb-6">
+                    {coupon.kind === "issued" || coupon.kind === "already" ? (
+                      <CouponResult state={coupon} onClose={close} />
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => void claimCoupon()}
+                          disabled={coupon.kind === "loading"}
+                          className="flex w-full items-center justify-center gap-2 text-[17px] font-bold text-ink transition-colors hover:text-accent disabled:opacity-60"
+                        >
+                          {coupon.kind === "loading" ? (
+                            <>
+                              <SpinnerGap size={17} weight="bold" className="animate-spin" />
+                              발급 중…
+                            </>
+                          ) : (
+                            <>
+                              {launchPromo.cta}
+                              <ArrowRight size={17} weight="bold" />
+                            </>
+                          )}
+                        </button>
+                        {coupon.kind === "error" && (
+                          <p className="mt-2 text-center text-[12px] leading-relaxed text-accent-ink">
+                            {coupon.message}
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </div>
 
                   {/* 하단 오렌지 바 + 중앙 노치 (카드 흰색이 파고드는 형태) */}
                   <div className="relative h-3.5 bg-accent">
@@ -237,5 +346,49 @@ export default function LaunchPopup() {
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+/**
+ * 발급 결과. 버튼 자리를 그대로 대체한다 — 별도 알림창을 띄우면 팝업 위에
+ * 팝업이 겹쳐 닫는 동선이 두 겹이 되기 때문.
+ */
+function CouponResult({
+  state,
+  onClose,
+}: {
+  state: { kind: "issued"; code: string } | { kind: "already"; code: string; used: boolean };
+  onClose: () => void;
+}) {
+  const issued = state.kind === "issued";
+  const message = issued
+    ? launchPromo.couponMessages.issued
+    : state.used
+      ? launchPromo.couponMessages.used
+      : launchPromo.couponMessages.already;
+
+  return (
+    <div role="status" aria-live="polite" className="text-center">
+      <p className="flex items-center justify-center gap-1.5 text-[15px] font-bold text-ink">
+        {issued ? (
+          <CheckCircle size={18} weight="fill" className="text-accent" />
+        ) : (
+          <Info size={18} weight="fill" className="text-muted" />
+        )}
+        {issued ? "쿠폰을 받았어요" : "이미 받으셨어요"}
+      </p>
+      <p className="mt-1.5 break-keep text-[12px] leading-relaxed text-muted">{message}</p>
+      <p className="mt-2 font-mono text-[13px] font-bold tracking-wide text-ink">
+        {state.code}
+      </p>
+      <Link
+        href="/mypage"
+        onClick={onClose}
+        className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-ink underline underline-offset-4 transition-colors hover:text-accent"
+      >
+        마이페이지에서 보기
+        <ArrowRight size={13} weight="bold" />
+      </Link>
+    </div>
   );
 }

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { List, X } from "@phosphor-icons/react";
 import { brand } from "@/lib/data";
+import AuthMenu from "@/components/AuthMenu";
 
 const links = [
   { label: "소개", href: "/about" },
@@ -28,7 +29,7 @@ function Wordmark() {
   );
 }
 
-export default function Nav() {
+export default function Nav({ authEnabled = false }: { authEnabled?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -63,6 +64,7 @@ export default function Nav() {
         </nav>
 
         <div className="flex items-center gap-2.5">
+          <AuthMenu authEnabled={authEnabled} />
           <Link
             href="/#contact"
             className="hidden rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-paper transition-colors duration-200 hover:bg-accent sm:inline-flex"
@@ -115,6 +117,11 @@ export default function Nav() {
                   </Link>
                 </motion.div>
               ))}
+              <AuthMenu
+                authEnabled={authEnabled}
+                variant="mobile"
+                onNavigate={() => setOpen(false)}
+              />
               <Link
                 href="/#contact"
                 onClick={() => setOpen(false)}

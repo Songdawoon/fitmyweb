@@ -14,7 +14,19 @@ import {
 import type { Plan } from "@/lib/data";
 import { formatKRW, brand } from "@/lib/data";
 
-type Props = { plan: Plan; impCode: string; channelKey: string; pg: string };
+/** 결제에 쓸 수 있는 보유 쿠폰 — 서버가 세션으로 조회해 넘긴다. */
+type Coupon = { code: string; amount: number };
+
+type Props = {
+  plan: Plan;
+  impCode: string;
+  channelKey: string;
+  pg: string;
+  loggedIn: boolean;
+  coupon: Coupon | null;
+  defaultEmail: string;
+  defaultName: string;
+};
 type Status = "idle" | "loading" | "verifying" | "success" | "pending" | "error";
 type Form = { name: string; email: string; phone: string; agree: boolean };
 type Errors = Partial<Record<keyof Form, string>>;
@@ -79,12 +91,31 @@ function createMerchantUid(planId: string): string {
   return `pay-${planId}-${Date.now().toString(36)}-${rand}`;
 }
 
-export default function CheckoutClient({ plan, impCode, channelKey, pg }: Props) {
-  const [form, setForm] = useState<Form>({ name: "", email: "", phone: "", agree: false });
+export default function CheckoutClient({
+  plan,
+  impCode,
+  channelKey,
+  pg,
+  loggedIn,
+  coupon,
+  defaultEmail,
+  defaultName,
+}: Props) {
+  const [form, setForm] = useState<Form>({
+    name: defaultName,
+    email: defaultEmail,
+    phone: "",
+    agree: false,
+  });
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
   const [receipt, setReceipt] = useState<{ impUid: string } | null>(null);
+  // 보유 쿠폰은 기본으로 적용해 둔다 — 있는 할인을 굳이 찾아 누르게 하지 않는다.
+  const [useCoupon, setUseCoupon] = useState(true);
+
+  const discount = coupon && useCoupon ? Math.min(coupon.amount, plan.price) : 0;
+  const payAmount = plan.price - discount;
 
   // 채널키 또는 pg 코드 중 하나만 있으면 결제 가능하다.
   const configured = Boolean(impCode && !impCode.includes("00000000") && (channelKey || pg));
@@ -187,17 +218,22 @@ export default function CheckoutClient({ plan, impCode, channelKey, pg }: Props)
             pay_method: "card",
             merchant_uid: createMerchantUid(plan.id),
             name: `${brand.name} · ${plan.name}`,
-            amount: plan.price,
+            amount: payAmount,
             buyer_name: form.name,
             buyer_email: form.email,
             buyer_tel: form.phone,
             // 서버가 결제 건만 보고 어떤 플랜인지 판별할 수 있도록 함께 기록한다.
             // V1 의 custom_data 는 문자열이라 JSON 으로 직렬화해서 넘긴다.
+            //
+            // couponCode 도 여기에 실어 보낸다. 클라이언트가 보낸 값이지만
+            // 서버가 DB 에서 미사용 쿠폰인지 다시 확인하고 할인액을 직접 계산하므로
+            // (lib/portone.ts), 금액을 깎아 보내는 조작은 통하지 않는다.
             custom_data: JSON.stringify({
               planId: plan.id,
               name: form.name,
               email: form.email,
               phone: form.phone,
+              ...(discount > 0 && coupon ? { couponCode: coupon.code } : {}),
             }),
             // 모바일에서는 이 주소로 되돌아오며, 위 useEffect 가 결과를 이어받는다.
             m_redirect_url: `${window.location.origin}/checkout?plan=${plan.id}`,
@@ -313,11 +349,57 @@ export default function CheckoutClient({ plan, impCode, channelKey, pg }: Props)
                 )}
               </ul>
 
-              <div className="mt-6 flex items-baseline justify-between border-t border-line pt-6">
-                <span className="text-sm text-muted">결제 금액</span>
-                <span className="font-display text-3xl font-extrabold tracking-tightest text-ink">
-                  {formatKRW(plan.price)}
-                </span>
+              {/* 보유 쿠폰 — 로그인 계정에 발급된 미사용 쿠폰이 있을 때만 */}
+              {coupon ? (
+                <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-ink/15 bg-mist px-4 py-3.5">
+                  <input
+                    type="checkbox"
+                    checked={useCoupon}
+                    onChange={(e) => setUseCoupon(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-baseline justify-between gap-2">
+                      <span className="text-[14px] font-bold text-ink">쿠폰 적용</span>
+                      <span className="whitespace-nowrap text-[14px] font-bold text-accent">
+                        −{formatKRW(coupon.amount)}
+                      </span>
+                    </span>
+                    <span className="mt-0.5 block truncate font-mono text-[12px] text-muted">
+                      {coupon.code}
+                    </span>
+                  </span>
+                </label>
+              ) : (
+                !loggedIn && (
+                  <p className="mt-6 rounded-2xl border border-dashed border-line px-4 py-3.5 text-[13px] leading-relaxed text-muted">
+                    <Link href="/login?callbackUrl=/checkout" className="font-semibold text-ink underline underline-offset-4">
+                      로그인
+                    </Link>
+                    하면 보유 쿠폰을 결제에 바로 적용할 수 있습니다.
+                  </p>
+                )
+              )}
+
+              <div className="mt-6 border-t border-line pt-6">
+                {discount > 0 && (
+                  <div className="mb-3 grid gap-1.5 text-[13px]">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-muted">플랜 금액</span>
+                      <span className="text-ink">{formatKRW(plan.price)}</span>
+                    </div>
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-muted">쿠폰 할인</span>
+                      <span className="font-semibold text-accent">−{formatKRW(discount)}</span>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-baseline justify-between">
+                  <span className="text-sm text-muted">결제 금액</span>
+                  <span className="font-display text-3xl font-extrabold tracking-tightest text-ink">
+                    {formatKRW(payAmount)}
+                  </span>
+                </div>
               </div>
 
               <button
@@ -339,7 +421,7 @@ export default function CheckoutClient({ plan, impCode, channelKey, pg }: Props)
                 ) : (
                   <>
                     <Lock size={16} weight="bold" />
-                    {formatKRW(plan.price)} 결제하기
+                    {formatKRW(payAmount)} 결제하기
                   </>
                 )}
               </button>

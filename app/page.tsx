@@ -1,4 +1,5 @@
 import Nav from "@/components/Nav";
+import { authEnabled } from "@/lib/auth";
 import Hero from "@/components/Hero";
 import AssuranceBand from "@/components/AssuranceBand";
 import Problem from "@/components/Problem";
@@ -19,7 +20,7 @@ import KakaoFloat from "@/components/KakaoFloat";
 export default function Home() {
   return (
     <>
-      <Nav />
+      <Nav authEnabled={authEnabled()} />
       <main>
         <Hero />
         <AssuranceBand />

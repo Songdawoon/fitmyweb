@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { brand } from "@/lib/data";
+import AuthProvider from "@/components/AuthProvider";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://myfitweb.kr"),
@@ -45,7 +46,9 @@ export default function RootLayout({
           href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@800,700,500&display=swap"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

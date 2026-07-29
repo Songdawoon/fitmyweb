@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import Nav from "@/components/Nav";
+import { authEnabled } from "@/lib/auth";
 import Footer from "@/components/Footer";
 import Reveal from "@/components/Reveal";
 import { about, brand, fits } from "@/lib/data";
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
-      <Nav />
+      <Nav authEnabled={authEnabled()} />
       <main>
         {/* Hero */}
         <section className="border-b border-line bg-mist pt-32">

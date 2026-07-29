@@ -3,16 +3,28 @@ import Link from "next/link";
 import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import { getPlan, plans } from "@/lib/data";
 import CheckoutClient from "@/components/CheckoutClient";
+import { auth } from "@/lib/auth";
+import { getUnusedCoupons } from "@/lib/account";
 
 export const metadata: Metadata = { title: "결제" };
 
-export default function CheckoutPage({
+// 세션에 따라 보유 쿠폰이 달라지므로 정적 생성 대상이 아니다.
+export const dynamic = "force-dynamic";
+
+export default async function CheckoutPage({
   searchParams,
 }: {
   searchParams: { plan?: string };
 }) {
   const plan = getPlan(searchParams.plan);
   const payablePlans = plans.filter((p) => p.payable);
+
+  /**
+   * 적용 가능한 쿠폰은 서버에서 뽑아 넘긴다. 클라이언트가 코드를 지어내도
+   * 결제 검증(lib/portone.ts)에서 걸리지만, 화면에는 본인 것만 보여야 한다.
+   */
+  const session = await auth();
+  const [myCoupon] = session?.user?.id ? await getUnusedCoupons(session.user.id) : [];
 
   return (
     <main className="min-h-[100dvh] bg-mist">
@@ -32,6 +44,10 @@ export default function CheckoutPage({
           impCode={process.env.NEXT_PUBLIC_PORTONE_IMP_CODE ?? ""}
           channelKey={process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY ?? ""}
           pg={process.env.NEXT_PUBLIC_PORTONE_PG ?? ""}
+          loggedIn={Boolean(session?.user)}
+          coupon={myCoupon ? { code: myCoupon.code, amount: myCoupon.amount } : null}
+          defaultEmail={session?.user?.email ?? ""}
+          defaultName={session?.user?.name ?? ""}
         />
       ) : (
         <section className="container-page section-x py-24 text-center">

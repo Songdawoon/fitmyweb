@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { sendInquiryMail, isEmailConfigured, type Inquiry } from "@/lib/email";
+import { auth } from "@/lib/auth";
+import { markInquiryMailed, recordInquiry } from "@/lib/account";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,6 +52,14 @@ export async function POST(req: Request) {
     );
   }
 
+  // 접수 기록을 먼저 남긴다. 메일보다 앞서 저장해야 발송이 실패해도 유실되지
+  // 않는다. 로그인 상태면 마이페이지에서 볼 수 있게 사용자와 연결한다.
+  const session = await auth();
+  const inquiryId = await recordInquiry({
+    userId: session?.user.id ?? null,
+    ...inquiry,
+  });
+
   // 키가 아직 없는 개발 환경 — 폼이 막히지 않도록 통과시키되 내용을 통째로 남긴다.
   if (!isEmailConfigured()) {
     console.warn(
@@ -73,6 +83,8 @@ export async function POST(req: Request) {
       { status: 502 },
     );
   }
+
+  if (inquiryId) await markInquiryMailed(inquiryId);
 
   return NextResponse.json({ ok: true, delivered: true });
 }

@@ -50,6 +50,7 @@ export async function POST(req: Request) {
         plan: result.plan,
         amount: result.amount,
         meta: result.meta,
+        couponId: result.couponId,
       });
       return NextResponse.json({ ok: true, verified: true });
 
