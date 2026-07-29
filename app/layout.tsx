@@ -4,7 +4,7 @@ import { brand } from "@/lib/data";
 import AuthProvider from "@/components/AuthProvider";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://myfitweb.kr"),
+  metadataBase: new URL("https://fitmyweb.com"),
   title: {
     default: `${brand.name} — ${brand.slogan}`,
     template: `%s | ${brand.name}`,

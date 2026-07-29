@@ -121,11 +121,11 @@ sips -Z 1200 --setProperty format jpeg --setProperty formatOptions 82 \
 
 ```
 RESEND_API_KEY=re_xxxx
-CONTACT_FROM_EMAIL=marketing@myfitweb.kr   # Resend 에서 도메인 인증 필요
-CONTACT_TO_EMAIL=hello@myfitweb.kr         # 콤마로 여러 명 가능
+CONTACT_FROM_EMAIL=marketing@fitmyweb.com   # Resend 에서 도메인 인증 필요
+CONTACT_TO_EMAIL=hello@fitmyweb.com         # 콤마로 여러 명 가능
 ```
 
-1. [Resend](https://resend.com) 가입 → Domains 에서 `myfitweb.kr` 인증(DNS 레코드 추가)
+1. [Resend](https://resend.com) 가입 → Domains 에서 `fitmyweb.com` 인증(DNS 레코드 추가)
 2. API Keys 에서 키 발급 → 위 세 값을 `.env.local` 과 Vercel 환경변수에 등록
 3. 도메인 인증 전 테스트는 `CONTACT_FROM_EMAIL=onboarding@resend.dev` 로 가능
 
