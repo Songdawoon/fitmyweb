@@ -111,7 +111,7 @@ sips -Z 1200 --setProperty format jpeg --setProperty formatOptions 82 \
 
 **결제 흐름**: 플랜 선택 → `/checkout` → `PortOne.requestPayment()` →
 `POST /api/payment/complete`(서버가 paymentId로 재조회해 `plan.price` 대조) → 성공.
-스타트핏·비즈핏은 고정가 결제, 브랜드핏(249만원부터)은 상담으로 견적 확정.
+스타트핏·비즈핏은 고정가 결제, 브랜드핏(349만원부터)은 상담으로 견적 확정.
 
 ## 알림 메일 (Resend)
 

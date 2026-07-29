@@ -4,12 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { X, ArrowRight } from "@phosphor-icons/react";
-import {
-  launchPromo,
-  launchTotalBenefit,
-  plans,
-  formatWon,
-} from "@/lib/data";
+import { launchPromo, launchTotalBenefit } from "@/lib/data";
 
 // 이벤트 개편으로 문구가 완전히 바뀌었으므로 키도 갈아끼워, 예전 팝업을
 // "오늘 하루 보지 않기"로 닫았던 방문자에게도 새 안내가 한 번은 노출되게 한다.
@@ -23,17 +18,6 @@ function nextMidnight(): number {
   const d = new Date();
   d.setHours(24, 0, 0, 0);
   return d.getTime();
-}
-
-/**
- * 하단 작은 글씨의 플랜별 가격 라인.
- * 가격을 하드코딩하지 않고 plans 에서 생성해 단가 변경이 자동 반영되게 한다.
- * fromPrice 플랜은 "…원부터" 로 표기 (Plans 섹션의 "부터~" 와 같은 의미).
- */
-function planPriceLine(): string {
-  return plans
-    .map((p) => `${p.name} ${formatWon(p.price)}${p.fromPrice ? "부터" : ""}`)
-    .join(" · ");
 }
 
 export default function LaunchPopup() {
@@ -223,13 +207,10 @@ export default function LaunchPopup() {
               ))}
             </ul>
 
-            {/* 하단 작은 글씨 — 안내문 + 플랜 종류별 가격 */}
-            <div className="mt-6 space-y-1.5 text-center">
+            {/* 하단 작은 글씨 — 이벤트 안내문 */}
+            <div className="mt-6 text-center">
               <p className="text-[12px] leading-relaxed text-paper/60">
                 {launchPromo.notice}
-              </p>
-              <p className="text-[12px] leading-relaxed text-paper/60">
-                {planPriceLine()}
               </p>
             </div>
 

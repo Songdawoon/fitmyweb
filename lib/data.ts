@@ -24,7 +24,7 @@ export const trustKeywords = [
 ];
 
 export const heroAssurances = [
-  "커스텀 홈페이지 99만원부터",
+  "커스텀 홈페이지 179만원부터",
   "제작 범위 내 기능 오류 6개월 무상 보수",
 ];
 
@@ -205,6 +205,14 @@ export type PortfolioItem = {
 // 공개된 실제 사례만 넣는다. 허구 회사명·수치를 실제처럼 노출하지 않는다.
 // 새 사례는 맨 앞에 추가하면 최신순으로 노출되고, category 만 맞추면 필터에 자동 반영된다.
 export const portfolioSamples: PortfolioItem[] = [
+  {
+    title: "손으로 재단하는 과정을 먼저 보여주고 무신사로 보내는 가죽 공방 브랜드 사이트",
+    industry: "가죽 공방 · 핸드메이드",
+    focus: "제작 과정 · 무신사 스토어 연결",
+    category: "brand",
+    url: "https://fitmyweb-portfolio-19.vercel.app",
+    image: "/portfolio/morcus.jpg",
+  },
   {
     title: "아이와 20분이면 끝나는 비누 키트를 단체와 가정으로 나눠 파는 브랜드몰",
     industry: "비누 만들기 키트",
@@ -447,7 +455,7 @@ export const plans: Plan[] = [
   {
     id: "startfit",
     name: "스타트핏",
-    price: 990_000,
+    price: 1_790_000,
     summary: "작은 사업과 개인 브랜드를 위한 핵심 정보 중심의 맞춤 홈페이지",
     audience: ["1인 기업", "전문가", "초기 창업자", "소규모 회사", "개인 브랜드"],
     scope: [
@@ -466,7 +474,7 @@ export const plans: Plan[] = [
   {
     id: "bizfit",
     name: "비즈핏",
-    price: 1_490_000,
+    price: 2_490_000,
     summary: "기업과 전문 서비스에 가장 적합한 마이핏웹 대표 제작 플랜",
     audience: ["중소기업", "제조기업", "기업 홈페이지 리뉴얼"],
     scope: [
@@ -487,7 +495,7 @@ export const plans: Plan[] = [
   {
     id: "brandfit",
     name: "브랜드핏",
-    price: 2_490_000,
+    price: 3_490_000,
     fromPrice: true,
     summary: "브랜드 이미지와 콘텐츠가 중요한 프리미엄 커스텀 홈페이지",
     audience: ["신규 브랜드", "스타트업", "고급 전문 서비스", "프로젝트 중심 기업"],
