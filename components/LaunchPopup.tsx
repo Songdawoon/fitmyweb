@@ -207,9 +207,11 @@ export default function LaunchPopup() {
               ))}
             </ul>
 
-            {/* 하단 작은 글씨 — 이벤트 안내문 */}
+            {/* 하단 작은 글씨 — 이벤트 안내문.
+                한글은 기본값이 음절 단위로 끊겨 "무상/으로" 처럼 단어가 갈라지므로
+                break-keep(어절 단위 줄바꿈) + text-balance(줄 길이 균등)로 잡는다. */}
             <div className="mt-6 text-center">
-              <p className="text-[12px] leading-relaxed text-paper/60">
+              <p className="mx-auto max-w-[28rem] text-balance break-keep text-[12px] leading-relaxed text-paper/60">
                 {launchPromo.notice}
               </p>
             </div>
