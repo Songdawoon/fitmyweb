@@ -6,7 +6,7 @@ export const brand = {
   mainCopy: ["우리 사업에 꼭 맞는 홈페이지,", "합리적인 비용으로"],
   subMessage: "제작 과정은 효율적으로, 결과물은 비즈니스에 맞게.",
   oneLiner: "필요한 것은 제대로 맞추고, 불필요한 비용은 줄였습니다.",
-  email: "hello@fitmyweb.com",
+  email: "cs@fitmyweb.com",
   phone: "010-0000-0000",
   hours: "평일 10:00 – 19:00",
   // 푸터 하단 사업자 정보. 통신판매업 번호는 신고 완료 후 실제 값으로 교체한다.

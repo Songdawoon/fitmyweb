@@ -121,8 +121,8 @@ sips -Z 1200 --setProperty format jpeg --setProperty formatOptions 82 \
 
 ```
 RESEND_API_KEY=re_xxxx
-CONTACT_FROM_EMAIL=marketing@fitmyweb.com   # Resend 에서 도메인 인증 필요
-CONTACT_TO_EMAIL=hello@fitmyweb.com         # 콤마로 여러 명 가능
+CONTACT_FROM_EMAIL=cs@fitmyweb.com   # Resend 에서 도메인 인증 필요
+CONTACT_TO_EMAIL=cs@fitmyweb.com         # 콤마로 여러 명 가능
 ```
 
 1. [Resend](https://resend.com) 가입 → Domains 에서 `fitmyweb.com` 인증(DNS 레코드 추가)
