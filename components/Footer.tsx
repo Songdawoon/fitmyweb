@@ -65,14 +65,31 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="mt-14 flex flex-col gap-3 border-t border-line pt-6 text-[13px] text-faint md:flex-row md:items-center md:justify-between">
-          <p>
-            {brand.name}은 {brand.operator}이 운영하는 커스텀 홈페이지 제작
-            브랜드입니다.
-          </p>
-          <p>
-            © {year} {brand.latin}. All rights reserved.
-          </p>
+        <div className="mt-14 flex flex-col gap-6 border-t border-line pt-6 text-[13px] text-faint md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-2">
+            <p>
+              {brand.name}은 {brand.operator}이 운영하는 커스텀 홈페이지 제작
+              브랜드입니다.
+            </p>
+            <dl className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:gap-x-5">
+              <div className="flex gap-2">
+                <dt>사업자번호</dt>
+                <dd className="text-muted">{brand.businessNumber}</dd>
+              </div>
+              <div className="flex gap-2">
+                <dt>통신판매업</dt>
+                <dd className="text-muted">{brand.mailOrderNumber}</dd>
+              </div>
+            </dl>
+          </div>
+          <div className="flex flex-col gap-2 md:items-end">
+            <p className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-ink">
+              Powered by {brand.poweredBy}
+            </p>
+            <p>
+              © {year} {brand.latin}. All rights reserved.
+            </p>
+          </div>
         </div>
       </div>
     </footer>

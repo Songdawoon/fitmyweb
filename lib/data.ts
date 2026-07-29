@@ -9,6 +9,10 @@ export const brand = {
   email: "hello@myfitweb.kr",
   phone: "010-0000-0000",
   hours: "평일 10:00 – 19:00",
+  // 푸터 하단 사업자 정보. 통신판매업 번호는 신고 완료 후 실제 값으로 교체한다.
+  businessNumber: "291-13-02768",
+  mailOrderNumber: "111-1111",
+  poweredBy: "CODESTORY",
 };
 
 export const trustKeywords = [
@@ -201,6 +205,70 @@ export type PortfolioItem = {
 // 공개된 실제 사례만 넣는다. 허구 회사명·수치를 실제처럼 노출하지 않는다.
 // 새 사례는 맨 앞에 추가하면 최신순으로 노출되고, category 만 맞추면 필터에 자동 반영된다.
 export const portfolioSamples: PortfolioItem[] = [
+  {
+    title: "아이와 20분이면 끝나는 비누 키트를 단체와 가정으로 나눠 파는 브랜드몰",
+    industry: "비누 만들기 키트",
+    focus: "단체 견적 · 인원별 수량 계산",
+    category: "shop",
+    url: "https://fitmyweb-portfolio17.vercel.app",
+    image: "/portfolio/haringharing.jpg",
+  },
+  {
+    title: "필수 기능만 담은 홈페이지 제작 상품을 가격부터 공개하는 서비스몰",
+    industry: "홈페이지 제작 서비스",
+    focus: "패키지 비교 · 바로 주문",
+    category: "etc",
+    url: "https://codestory00.mycafe24.com",
+    image: "/portfolio/silsokmyweb.jpg",
+  },
+  {
+    title: "회사와 팀, 포트폴리오를 한 흐름으로 보여주는 웹 제작사 소개 사이트",
+    industry: "홈페이지 제작 · 웹에이전시",
+    focus: "서비스 소개 → 견적 문의",
+    category: "etc",
+    url: "https://savemyweb00.mycafe24.com",
+    image: "/portfolio/webstarter.jpg",
+  },
+  {
+    title: "컬렉션과 룩북으로 무드를 먼저 보여주는 패션 브랜드 사이트",
+    industry: "패션 · 의류 브랜드",
+    focus: "컬렉션 · 룩북 탐색",
+    category: "brand",
+    url: "https://savemyweb01.mycafe24.com",
+    image: "/portfolio/daymood.jpg",
+  },
+  {
+    title: "인쇄 서비스와 제작 사례를 함께 보여주는 홈데코 인쇄 전문 사이트",
+    industry: "인쇄 · 홈데코 제작",
+    focus: "서비스 안내 → 견적 문의",
+    category: "etc",
+    url: "https://savemyweb02.mycafe24.com",
+    image: "/portfolio/sdprint.jpg",
+  },
+  {
+    title: "성과 사례와 프로세스로 설득하는 브랜딩·마케팅 에이전시 사이트",
+    industry: "브랜딩 · 퍼포먼스 마케팅",
+    focus: "성과 사례 · 인사이트 동선",
+    category: "etc",
+    url: "https://savemyweb03.mycafe24.com",
+    image: "/portfolio/ondobranding.jpg",
+  },
+  {
+    title: "운용 철학과 리서치 체계를 단계별로 설명하는 투자 운용사 사이트",
+    industry: "투자 운용 · 리서치",
+    focus: "운용 철학 · 리서치 구독",
+    category: "etc",
+    url: "https://savemyweb04.mycafe24.com",
+    image: "/portfolio/cashcow.jpg",
+  },
+  {
+    title: "용도별 추천부터 정품 구성과 AS까지 안내하는 드론 판매·촬영 사이트",
+    industry: "드론 판매 · 촬영 운용",
+    focus: "용도별 제품 추천 동선",
+    category: "shop",
+    url: "https://savemyweb05.mycafe24.com",
+    image: "/portfolio/dronework.jpg",
+  },
   {
     title: "사진 수백 장에서 쓸 컷만 골라 영상까지 만들어주는 AI 서비스 소개",
     industry: "AI 사진 선별 · 영상 자동 생성",
