@@ -594,12 +594,29 @@ export const couponPromo = {
   badge: "고객님 Only",
   sideLeft: ["한정", "쿠폰"],
   sideRight: ["발급", "안내"],
-  amountLabel: "최대",
-  amount: 26_000,
+  amountLabel: "총 할인",
   cta: "쿠폰받기",
+  /**
+   * 쿠폰으로 무상 제공되는 유상 옵션. 카드의 총 할인액은 이 목록의 합계로
+   * 계산되므로(couponTotalDiscount), 항목만 고치면 금액이 따라 바뀐다.
+   */
+  benefits: [
+    { label: "네이버 서치어드바이저 등록", value: 50_000 },
+    { label: "구글 서치콘솔 등록", value: 50_000 },
+    { label: "홈페이지 주소연동", value: 50_000 },
+    { label: "결제연동", value: 300_000 },
+    { label: "소셜로그인", value: 300_000 },
+    { label: "회원가입 5만원 쿠폰", value: 50_000 },
+  ],
   notice:
     "회원가입 및 본인인증 완료 후 지급되며, 구매 이력이 없는 고객님 한정 쿠폰 입니다.",
 };
+
+/** 쿠폰 카드에 표기하는 총 할인액 — 개별 혜택 금액의 합. */
+export const couponTotalDiscount = couponPromo.benefits.reduce(
+  (sum, b) => sum + b.value,
+  0,
+);
 
 // 홈 우하단 플로팅 상담 버튼. 페이지 내 #contact 폼과 달리 카카오톡 채널로
 // 바로 연결되는 즉시 상담 경로다.

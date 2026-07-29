@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, ArrowLineDown } from "@phosphor-icons/react";
-import { couponPromo, plans, formatWon } from "@/lib/data";
+import {
+  couponPromo,
+  couponTotalDiscount,
+  plans,
+  formatWon,
+} from "@/lib/data";
 
 const STORAGE_KEY = "myfitweb:coupon-dismissed-until";
 const OPEN_DELAY_MS = 1200;
@@ -107,7 +112,7 @@ export default function CouponPopup() {
             exit={{ scale: 0.97, opacity: 0 }}
             transition={spring}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-[640px] overflow-hidden rounded-3xl bg-ink px-6 pb-6 pt-14 shadow-2xl sm:px-9 sm:pb-7"
+            className="relative max-h-[90vh] w-full max-w-[640px] overflow-y-auto rounded-3xl bg-ink px-6 pb-6 pt-14 shadow-2xl sm:px-9 sm:pb-7"
           >
             <button
               ref={closeRef}
@@ -151,14 +156,19 @@ export default function CouponPopup() {
                 </div>
 
                 <div className="overflow-hidden rounded-2xl bg-paper pt-7">
-                  <div className="flex items-baseline justify-center gap-1 px-5">
-                    <span className="text-[13px] font-bold leading-tight text-ink">
+                  {/* 금액이 6자리 이상이라 라벨을 윗줄로 올려 한 줄 폭을 확보한다. */}
+                  <div className="px-5 text-center">
+                    <p className="text-[14px] font-bold leading-tight text-ink">
                       {couponPromo.amountLabel}
-                    </span>
-                    <span className="font-display text-[44px] font-extrabold leading-none tracking-tightest text-ink">
-                      {couponPromo.amount.toLocaleString("ko-KR")}
-                    </span>
-                    <span className="text-[19px] font-extrabold text-ink">원</span>
+                    </p>
+                    <p className="mt-1 flex items-baseline justify-center gap-0.5">
+                      <span className="font-display text-[40px] font-extrabold leading-none tracking-tightest text-ink">
+                        {couponTotalDiscount.toLocaleString("ko-KR")}
+                      </span>
+                      <span className="text-[18px] font-extrabold text-ink">
+                        원
+                      </span>
+                    </p>
                   </div>
 
                   <div className="mx-6 my-5 border-t border-dashed border-line" />
@@ -192,8 +202,25 @@ export default function CouponPopup() {
               </div>
             </div>
 
+            {/* 쿠폰에 포함되는 유상 옵션 — 라벨과 정가를 나란히 보여준다. */}
+            <ul className="mt-7 space-y-2">
+              {couponPromo.benefits.map((b) => (
+                <li
+                  key={b.label}
+                  className="flex items-center justify-between gap-3 rounded-xl bg-paper px-4 py-2.5"
+                >
+                  <span className="text-[14px] font-bold text-ink sm:text-[15px]">
+                    {b.label}
+                  </span>
+                  <span className="whitespace-nowrap font-display text-[14px] font-extrabold text-accent sm:text-[15px]">
+                    (+{b.value.toLocaleString("ko-KR")})
+                  </span>
+                </li>
+              ))}
+            </ul>
+
             {/* 하단 작은 글씨 — 안내문 + 플랜 종류별 가격 */}
-            <div className="mt-7 space-y-1.5 text-center">
+            <div className="mt-6 space-y-1.5 text-center">
               <p className="text-[12px] leading-relaxed text-paper/60">
                 {couponPromo.notice}
               </p>
