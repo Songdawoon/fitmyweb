@@ -173,7 +173,7 @@ export const steps: Step[] = [
   { no: "08", title: "운영 안내", desc: "고객이 직접 수정하고 관리할 수 있도록 기본적인 운영 방법을 안내합니다.", phase: "오픈" },
 ];
 
-export type PortfolioCategory = "shop" | "brand" | "clinic" | "etc";
+export type PortfolioCategory = "shop" | "brand" | "clinic" | "academy" | "etc";
 
 /** 포트폴리오 필터 탭. "all" 은 기본 선택 상태로 전체를 보여준다. */
 export const portfolioCategories: {
@@ -184,6 +184,7 @@ export const portfolioCategories: {
     { id: "shop", label: "쇼핑몰" },
     { id: "brand", label: "브랜드" },
     { id: "clinic", label: "병원" },
+    { id: "academy", label: "학원" },
     { id: "etc", label: "기타" },
   ];
 
@@ -209,7 +210,7 @@ export const portfolioSamples: PortfolioItem[] = [
     title: "아이가 말하는 시간을 숫자로 증명하고 무료 레벨테스트로 연결하는 초등 영어학원 사이트",
     industry: "초등 영어학원 · 전국 60개 지점",
     focus: "무료 레벨테스트 신청 · 지점 찾기",
-    category: "etc",
+    category: "academy",
     url: "https://fitmyweb-portfolio-22.vercel.app",
     image: "/portfolio/tellmemore.jpg",
   },
@@ -217,7 +218,7 @@ export const portfolioSamples: PortfolioItem[] = [
     title: "수업 방식을 먼저 보여주고 60분 무료 진단으로 연결하는 초등 수학학원 사이트",
     industry: "초등 수학학원 · 12개 지점",
     focus: "무료 진단 신청 · 지점 찾기",
-    category: "etc",
+    category: "academy",
     url: "https://fitmyweb-portfolio-21.vercel.app",
     image: "/portfolio/sussori.jpg",
   },
