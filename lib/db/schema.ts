@@ -39,8 +39,12 @@ export const users = pgTable(
 );
 
 /**
- * 회원가입 쿠폰. 가입(첫 로그인) 시 1인 1장만 발급되며, 유니크 인덱스가
- * 중복 발급을 막는다. 사용 처리는 운영자가 결제 확인 후 수동으로 한다.
+ * 계정에 저장되는 쿠폰. kind 는 "event"(이벤트 쿠폰)와 "signup"(회원가입 쿠폰)
+ * 두 가지이며, 계정당 종류별 1장만 발급되도록 유니크 인덱스가 막는다.
+ * 두 쿠폰은 한 결제에 함께 적용할 수 있고, 사용 처리는 결제 확정 시 자동으로 된다.
+ *
+ * 이벤트 쿠폰은 비회원도 공개 코드(EVENT_COUPON_CODE)로 쓸 수 있어, 여기에
+ * 행이 없는 결제 건도 존재한다.
  */
 export const coupons = pgTable(
   "coupons",
@@ -50,14 +54,14 @@ export const coupons = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     code: text("code").notNull(),
-    kind: text("kind").notNull(), // "signup"
+    kind: text("kind").notNull(), // "event" | "signup"
     amount: integer("amount").notNull(),
     usedAt: timestamp("used_at", { withTimezone: true }),
     issuedAt: timestamp("issued_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
     codeIdx: uniqueIndex("coupons_code_idx").on(t.code),
-    // 같은 종류의 쿠폰은 한 사람에게 한 번만 — 회원가입 쿠폰 중복 발급 방지.
+    // 같은 종류의 쿠폰은 한 사람에게 한 번만 — 종류별 중복 발급 방지.
     userKindIdx: uniqueIndex("coupons_user_kind_idx").on(t.userId, t.kind),
   }),
 );

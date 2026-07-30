@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
-import { getPlan, plans } from "@/lib/data";
-import CheckoutClient from "@/components/CheckoutClient";
+import {
+  EVENT_COUPON_CODE,
+  couponDefs,
+  getPlan,
+  isEventCouponActive,
+  plans,
+} from "@/lib/data";
+import CheckoutClient, { type CheckoutCoupon } from "@/components/CheckoutClient";
 import { auth } from "@/lib/auth";
 import { getUnusedCoupons } from "@/lib/account";
 
@@ -21,10 +27,34 @@ export default async function CheckoutPage({
 
   /**
    * 적용 가능한 쿠폰은 서버에서 뽑아 넘긴다. 클라이언트가 코드를 지어내도
-   * 결제 검증(lib/portone.ts)에서 걸리지만, 화면에는 본인 것만 보여야 한다.
+   * 결제 검증(lib/portone.ts)에서 걸리지만, 화면에는 쓸 수 있는 것만 보여야 한다.
+   *
+   * 이벤트 쿠폰은 비회원도 쓸 수 있어 공개 코드로 붙이고, 계정에 저장해 둔
+   * 쿠폰이 있으면 그쪽을 우선 쓴다(사용 여부가 마이페이지에 남도록).
+   * 회원가입 쿠폰은 계정에 발급된 경우에만 노출한다.
    */
   const session = await auth();
-  const [myCoupon] = session?.user?.id ? await getUnusedCoupons(session.user.id) : [];
+  const myCoupons = session?.user?.id ? await getUnusedCoupons(session.user.id) : [];
+
+  const applicableCoupons: CheckoutCoupon[] = [];
+
+  if (isEventCouponActive()) {
+    const owned = myCoupons.find((c) => c.kind === "event");
+    applicableCoupons.push({
+      ...couponDefs.event,
+      code: owned?.code ?? EVENT_COUPON_CODE,
+      amount: owned?.amount ?? couponDefs.event.amount,
+    });
+  }
+
+  const ownedSignup = myCoupons.find((c) => c.kind === "signup");
+  if (ownedSignup) {
+    applicableCoupons.push({
+      ...couponDefs.signup,
+      code: ownedSignup.code,
+      amount: ownedSignup.amount,
+    });
+  }
 
   return (
     <main className="min-h-[100dvh] bg-mist">
@@ -45,7 +75,7 @@ export default async function CheckoutPage({
           channelKey={process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY ?? ""}
           pg={process.env.NEXT_PUBLIC_PORTONE_PG ?? ""}
           loggedIn={Boolean(session?.user)}
-          coupon={myCoupon ? { code: myCoupon.code, amount: myCoupon.amount } : null}
+          coupons={applicableCoupons}
           defaultEmail={session?.user?.email ?? ""}
           defaultName={session?.user?.name ?? ""}
         />

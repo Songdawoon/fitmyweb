@@ -10,7 +10,7 @@ export const brand = {
   phone: "010-0000-0000",
   hours: "평일 10:00 – 19:00",
   // 푸터 하단 사업자 정보. 통신판매업 번호는 신고 완료 후 실제 값으로 교체한다.
-  businessNumber: "291-13-02768",
+  businessNumber: "510-11-92376",
   mailOrderNumber: "111-1111",
   poweredBy: "CODESTORY",
 };
@@ -180,12 +180,12 @@ export const portfolioCategories: {
   id: PortfolioCategory | "all";
   label: string;
 }[] = [
-  { id: "all", label: "전체" },
-  { id: "shop", label: "쇼핑몰" },
-  { id: "brand", label: "브랜드" },
-  { id: "clinic", label: "병원" },
-  { id: "etc", label: "기타" },
-];
+    { id: "all", label: "전체" },
+    { id: "shop", label: "쇼핑몰" },
+    { id: "brand", label: "브랜드" },
+    { id: "clinic", label: "병원" },
+    { id: "etc", label: "기타" },
+  ];
 
 export type PortfolioItem = {
   title: string;
@@ -205,6 +205,14 @@ export type PortfolioItem = {
 // 공개된 실제 사례만 넣는다. 허구 회사명·수치를 실제처럼 노출하지 않는다.
 // 새 사례는 맨 앞에 추가하면 최신순으로 노출되고, category 만 맞추면 필터에 자동 반영된다.
 export const portfolioSamples: PortfolioItem[] = [
+  {
+    title: "먹그림 컬렉션과 내 기종을 골라 주문하는 수제 휴대폰 케이스 브랜드몰",
+    industry: "수제 휴대폰 케이스",
+    focus: "컬렉션 · 기종 선택 후 주문",
+    category: "shop",
+    url: "https://fitmyweb-portfolio-20.vercel.app",
+    image: "/portfolio/mukhyang.jpg",
+  },
   {
     title: "손으로 재단하는 과정을 먼저 보여주고 무신사로 보내는 가죽 공방 브랜드 사이트",
     industry: "가죽 공방 · 핸드메이드",
@@ -545,27 +553,27 @@ export const testimonialSamples = [
   {
     heading: "회사의 강점을 잘 정리해주셨습니다",
     body: "기존 홈페이지가 오래되기도 했지만, 무엇보다 저희가 어떤 회사인지 제대로 전달되지 않는 것이 고민이었습니다. 처음 상담할 때 사업 내용과 주요 고객을 꼼꼼히 물어보시고, 어떤 내용을 먼저 보여줘야 하는지 구성부터 제안해주셨습니다.",
-    author: "경기 소재 산업용 부품 제조업체 김○○ 대표",
+    author: "경기 소재 산업용 부품 제조업체 김대표님",
   },
   {
     heading: "생각했던 것보다 훨씬 전문적으로 완성됐어요",
     body: "처음에는 제작비가 합리적이라 완성도가 부족하지 않을까 걱정했습니다. 그런데 상담부터 디자인 시안, 수정 과정까지 체계적으로 진행되어 걱정이 금방 사라졌습니다. 모바일에서도 상담 신청이 편리하게 구성됐습니다.",
-    author: "서울 마포구 영어학원 이○○ 원장",
+    author: "서울 마포구 영어학원 이원장님",
   },
   {
     heading: "요청한 내용만 만드는 업체와는 달랐습니다",
     body: "다른 업체는 페이지 수와 기능 이야기만 했는데, 마이핏웹은 저희 고객이 어떤 부분에서 신뢰를 느끼는지부터 질문해주셨습니다. 단순히 보기 좋은 홈페이지가 아니라 실제 상담으로 연결되는 구조를 만들어주셨습니다.",
-    author: "기업경영 컨설팅사 박○○ 대표",
+    author: "기업경영 컨설팅사 박대표님",
   },
   {
     heading: "저희 브랜드에 잘 맞는 홈페이지가 완성됐습니다",
     body: "참고 사이트를 그대로 따라 만드는 것이 아니라, 저희 브랜드에 어울리는 색상과 이미지 방향을 새롭게 제안해주셨습니다. 제작이 끝난 뒤에는 직접 수정하는 방법까지 알려주셔서 운영하기도 어렵지 않았습니다.",
-    author: "주거공간 인테리어 스튜디오 최○○ 대표",
+    author: "주거공간 인테리어 스튜디오 최대표님",
   },
   {
     heading: "비용과 제작 과정이 투명해서 믿을 수 있었습니다",
     body: "추가비용이 계속 발생하지 않을까 가장 걱정했는데, 상담 단계에서 포함되는 작업과 별도 비용을 정확히 설명해주셔서 예산을 정하기 쉬웠습니다. 합리적인 비용이었지만 결과물은 저렴한 홈페이지처럼 보이지 않았습니다.",
-    author: "생활용품 온라인 브랜드 정○○ 대표",
+    author: "생활용품 온라인 브랜드 정대표님",
   },
 ];
 
@@ -596,9 +604,85 @@ export const faqs = [
   },
 ];
 
+// ── 쿠폰 ───────────────────────────────────────────────────────────
+/**
+ * 쿠폰은 두 종류이고, 한 결제에 함께 적용된다(최대 80만원).
+ *
+ *   event  — 8월 이벤트 쿠폰. 비회원도 결제 화면에서 바로 쓸 수 있고,
+ *            회원은 계정에 저장해 마이페이지에서 확인할 수 있다.
+ *   signup — 회원가입 쿠폰. 로그인한 계정만 발급받고 사용할 수 있다.
+ *
+ * "계정당 종류별 1장" 은 앱 로직이 아니라 coupons 테이블의 유니크 인덱스
+ * (user_id, kind)가 보증한다.
+ */
+export type CouponKind = "event" | "signup";
+
+/** 이벤트 쿠폰이 대신해 주는 유상 옵션 — 이 합계가 곧 쿠폰 금액이다. */
+const eventCouponIncludes = [
+  { label: "네이버 서치어드바이저 등록", value: 50_000 },
+  { label: "구글 서치콘솔 등록", value: 50_000 },
+  { label: "홈페이지 주소연동", value: 50_000 },
+  { label: "결제연동", value: 300_000 },
+  { label: "소셜로그인", value: 300_000 },
+];
+
+export type CouponDef = {
+  kind: CouponKind;
+  name: string;
+  amount: number;
+  /** true 면 로그인 계정만 발급·사용할 수 있다. */
+  memberOnly: boolean;
+  /** 결제 화면에서 "이 쿠폰으로 무엇을 받는지" 를 밝히는 목록. */
+  includes: { label: string; value?: number }[];
+  /** 목록 아래 한 줄 안내. */
+  note: string;
+};
+
+export const couponDefs: Record<CouponKind, CouponDef> = {
+  event: {
+    kind: "event",
+    name: "8월 이벤트 쿠폰",
+    amount: eventCouponIncludes.reduce((sum, b) => sum + b.value, 0),
+    memberOnly: false,
+    includes: eventCouponIncludes,
+    note: "제작 계약 시 위 유상 옵션을 무상으로 제공합니다. 로그인 없이도 결제 화면에서 사용할 수 있습니다.",
+  },
+  signup: {
+    kind: "signup",
+    name: "회원가입 쿠폰",
+    amount: 50_000,
+    memberOnly: true,
+    includes: [{ label: "제작비 즉시 할인", value: 50_000 }],
+    note: "로그인한 계정에만 발급되며, 이벤트 쿠폰과 함께 사용할 수 있습니다.",
+  },
+};
+
+export const couponKinds: CouponKind[] = ["event", "signup"];
+
+/**
+ * 비회원이 결제 화면에서 쓰는 이벤트 쿠폰 코드.
+ *
+ * 계정에 저장된 쿠폰과 달리 DB 행이 없는 공개 코드다. 이벤트 기간 동안
+ * 누구에게나 동일하게 적용되는 할인이므로 코드가 알려져도 문제가 없고,
+ * 할인액은 서버가 이 상수에서 직접 읽는다(클라이언트 값은 믿지 않는다).
+ */
+export const EVENT_COUPON_CODE = "MFW-AUGUST-EVENT";
+
+/** 이벤트 쿠폰 종료 시각(KST). 이 시각 이후에는 발급도 적용도 되지 않는다. */
+export const EVENT_COUPON_ENDS_AT = new Date("2026-08-31T23:59:59+09:00");
+
+export const eventCouponPeriodLabel = "2026년 8월 31일까지";
+
+export function isEventCouponActive(now: Date = new Date()): boolean {
+  return now.getTime() <= EVENT_COUPON_ENDS_AT.getTime();
+}
+
+/** 두 쿠폰을 모두 받았을 때의 총 할인액. */
+export const totalCouponBenefit = couponDefs.event.amount + couponDefs.signup.amount;
+
 // 홈 첫 진입 시 노출되는 런칭 기념 이벤트 팝업 카피.
-// 안내(제작 계약 시 유상 옵션 무상 제공)와 행동(회원가입 쿠폰 발급)이 함께
-// 있는 팝업이다. 쿠폰은 로그인한 계정에 1장만 저장되고 결제 화면에서 쓰인다.
+// 안내(쿠폰 구성)와 행동(쿠폰 발급)이 함께 있는 팝업이다. 로그인하면 두 쿠폰이
+// 계정에 저장되고, 비회원은 이벤트 쿠폰만 결제 화면에서 바로 쓸 수 있다.
 export const launchPromo = {
   badge: "서비스 런칭 기념",
   sideLeft: ["런칭", "기념"],
@@ -606,43 +690,24 @@ export const launchPromo = {
   amountLabel: "총 할인",
   cta: "쿠폰 다운받기",
   /**
-   * 쿠폰 발급 버튼의 결과 문구. 계정당 1장이라 재시도는 "이미 받음" 으로 답한다.
+   * 쿠폰 발급 버튼의 결과 문구. 종류별 1장이라 재시도는 "이미 받음" 으로 답한다.
    * 문구를 컴포넌트가 아니라 여기 두는 이유는 나머지 팝업 카피와 한자리에서
    * 고칠 수 있게 하기 위함.
    */
   couponMessages: {
     issued: "쿠폰이 계정에 저장되었어요. 결제 화면에서 자동으로 적용됩니다.",
-    already: "이미 발급받은 쿠폰이 있어요. 쿠폰은 계정당 1장만 발급됩니다.",
-    used: "이미 발급받아 사용까지 완료한 쿠폰이 있어요. 계정당 1장만 발급됩니다.",
+    already: "이미 발급받은 쿠폰이에요. 쿠폰은 계정당 종류별 1장만 발급됩니다.",
+    used: "이미 사용까지 완료한 쿠폰이에요. 계정당 종류별 1장만 발급됩니다.",
     unavailable: "지금은 쿠폰을 발급할 수 없어요. 잠시 후 다시 시도해 주세요.",
     error: "쿠폰 발급에 실패했어요. 잠시 후 다시 시도해 주세요.",
   },
-  /**
-   * 이벤트로 무상 제공하는 유상 옵션. 카드의 총 할인액은 이 목록의 합계로
-   * 계산되므로(launchTotalBenefit), 항목만 고치면 금액이 따라 바뀐다.
-   */
-  benefits: [
-    { label: "네이버 서치어드바이저 등록", value: 50_000 },
-    { label: "구글 서치콘솔 등록", value: 50_000 },
-    { label: "홈페이지 주소연동", value: 50_000 },
-    { label: "결제연동", value: 300_000 },
-    { label: "소셜로그인", value: 300_000 },
-    { label: "회원가입 5만원 쿠폰", value: 50_000 },
-  ],
-  // TODO: 이벤트 종료일이 확정되면 문구에 기간을 넣는다.
   // 줄 단위로 나눠 둔 이유: 자동 줄바꿈에 맡기면 "제작을 / 계약하시면" 처럼
   // 조건절 중간이 끊긴다. 의미 단위(조건 / 결과)로 직접 끊어 준다.
   notice: [
-    "마이핏웹 서비스 런칭을 기념해, 이벤트 기간에 제작을 계약하시면",
-    "위 유상 옵션을 무상으로 제공합니다.",
+    `이벤트 쿠폰은 ${eventCouponPeriodLabel} 사용할 수 있고, 회원가입 쿠폰과 함께 적용됩니다.`,
+    "이벤트 쿠폰은 로그인 없이도 결제 화면에서 사용할 수 있습니다.",
   ],
 };
-
-/** 이벤트 카드에 표기하는 총 할인액 — 개별 혜택 금액의 합. */
-export const launchTotalBenefit = launchPromo.benefits.reduce(
-  (sum, b) => sum + b.value,
-  0,
-);
 
 // 홈 우하단 플로팅 상담 버튼. 페이지 내 #contact 폼과 달리 카카오톡 채널로
 // 바로 연결되는 즉시 상담 경로다.
@@ -652,6 +717,25 @@ export const kakaoConsult = {
   // 데스크톱에서 버튼 왼쪽에 붙는 짧은 안내. 모바일은 공간이 없어 숨긴다.
   tooltip: "1:1 상담",
 };
+
+/**
+ * 상담 신청 폼 사용 여부. false 면 폼은 화면에 그대로 두되 입력을 막고,
+ * 그 자리에 전화·이메일·카카오톡 등 직접 연락 수단을 먼저 보여준다
+ * (components/ContactForm.tsx). 다시 열 때는 true 로만 바꾸면 된다.
+ */
+export const contactFormEnabled = false;
+
+export const contactPaused = {
+  title: "상담 신청 폼은 잠시 닫아 두었습니다",
+  body: "아래 연락처로 문의해 주시면 같은 담당자가 확인 후 빠르게 답변드립니다.",
+  formNotice: "현재 폼 접수를 받지 않습니다. 위 연락처를 이용해 주세요.",
+};
+
+/**
+ * brand.phone 이 아직 자리표시자(010-0000-0000)인지.
+ * 실제 번호가 들어오기 전까지 전화 항목을 숨겨 가짜 번호 노출을 막는다.
+ */
+export const hasRealPhone = !/0{4}/.test(brand.phone.replace(/\D/g, ""));
 
 export const budgetOptions = [
   "100만원 미만",

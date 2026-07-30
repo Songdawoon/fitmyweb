@@ -6,7 +6,7 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { auth, authEnabled } from "@/lib/auth";
 import { getMyPageData } from "@/lib/account";
-import { formatWon } from "@/lib/data";
+import { couponDefs, formatWon, type CouponKind } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "마이페이지",
@@ -112,7 +112,10 @@ export default async function MyPage() {
                         c.usedAt ? "border-line opacity-55" : "border-ink"
                       }`}
                     >
-                      <p className="font-display text-2xl font-extrabold tracking-tightest text-ink">
+                      <p className="text-[13px] font-semibold text-muted">
+                        {couponDefs[c.kind as CouponKind]?.name ?? "쿠폰"}
+                      </p>
+                      <p className="mt-1 font-display text-2xl font-extrabold tracking-tightest text-ink">
                         {formatWon(c.amount)}
                       </p>
                       <p className="mt-1 font-mono text-[13px] tracking-wide text-muted">

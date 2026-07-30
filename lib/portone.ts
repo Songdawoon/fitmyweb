@@ -2,7 +2,7 @@ import "server-only";
 
 import { getPlan, type Plan } from "@/lib/data";
 import { sendOrderMail, isEmailConfigured } from "@/lib/email";
-import { recordOrderRow, findRedeemableCoupon, markCouponUsed } from "@/lib/account";
+import { recordOrderRow, resolveCoupons, markCouponUsed } from "@/lib/account";
 
 /**
  * PortOne V1(구 아임포트) 서버 연동 유틸.
@@ -64,21 +64,33 @@ export type OrderMeta = {
   name?: string;
   email?: string;
   phone?: string;
-  /** 결제에 적용한 쿠폰 코드. 할인액은 서버가 DB 에서 다시 읽는다. */
-  couponCode?: string;
+  /**
+   * 결제에 적용한 쿠폰 코드들(이벤트·회원가입 최대 2장).
+   * 할인액은 서버가 코드로 다시 확인해 직접 계산한다.
+   */
+  couponCodes?: string[];
 };
 
 export function parseCustomData(raw: unknown): OrderMeta | null {
   if (typeof raw !== "string" || !raw) return null;
   try {
-    const parsed = JSON.parse(raw) as Partial<OrderMeta>;
+    const parsed = JSON.parse(raw) as Partial<OrderMeta> & { couponCode?: unknown };
     if (typeof parsed?.planId !== "string") return null;
+
+    // couponCode(단수)는 쿠폰이 한 종류였던 시절의 형식이다. 결제창을 이미
+    // 띄워 둔 방문자의 건이 남아 있을 수 있어 함께 받아 준다.
+    const codes = Array.isArray(parsed.couponCodes)
+      ? parsed.couponCodes.filter((c): c is string => typeof c === "string")
+      : typeof parsed.couponCode === "string"
+        ? [parsed.couponCode]
+        : [];
+
     return {
       planId: parsed.planId,
       name: typeof parsed.name === "string" ? parsed.name : undefined,
       email: typeof parsed.email === "string" ? parsed.email : undefined,
       phone: typeof parsed.phone === "string" ? parsed.phone : undefined,
-      couponCode: typeof parsed.couponCode === "string" ? parsed.couponCode : undefined,
+      couponCodes: codes.length > 0 ? codes : undefined,
     };
   } catch {
     return null;
@@ -103,8 +115,8 @@ export type VerifyOutcome =
       plan: Plan;
       amount: number;
       meta: OrderMeta | null;
-      /** 이 결제에 실제로 적용된 쿠폰 — 확정 시 사용 처리한다. */
-      couponId: string | null;
+      /** 이 결제에 실제로 적용된 계정 쿠폰 id — 확정 시 사용 처리한다. */
+      couponIds: string[];
       discount: number;
     }
   | {
@@ -199,17 +211,17 @@ export async function verifyPayment(impUid: string): Promise<VerifyOutcome> {
   const paymentStatus = String(payment.status ?? "");
 
   /**
-   * 쿠폰 할인 — 금액은 클라이언트가 보낸 값을 쓰지 않고, 코드로 DB 를 다시 읽어
-   * 미사용 쿠폰인지 확인한 뒤 그 쿠폰에 적힌 금액만 인정한다. 그래서 결제창에
-   * 임의의 금액을 넣어 보내도 아래 대조에서 걸린다.
+   * 쿠폰 할인 — 금액은 클라이언트가 보낸 값을 쓰지 않고, 코드를 서버에서 다시
+   * 확인해 정해진 금액만 인정한다(resolveCoupons). 그래서 결제창에 임의의
+   * 금액을 넣어 보내도 아래 대조에서 걸린다.
    */
-  let couponId: string | null = null;
+  let couponIds: string[] = [];
   let discount = 0;
 
-  if (meta?.couponCode) {
-    const found = await findRedeemableCoupon(meta.couponCode);
-    if (!found) {
-      console.error("[payment] 쿠폰 무효:", { impUid, code: meta.couponCode });
+  if (meta?.couponCodes?.length) {
+    const resolved = await resolveCoupons(meta.couponCodes);
+    if (!resolved) {
+      console.error("[payment] 쿠폰 무효:", { impUid, codes: meta.couponCodes });
       return {
         status: "failed",
         verified: false,
@@ -218,8 +230,14 @@ export async function verifyPayment(impUid: string): Promise<VerifyOutcome> {
         httpStatus: 400,
       };
     }
-    couponId = found.id;
-    discount = Math.min(found.amount, plan.price);
+    couponIds = resolved
+      .map((c) => c.couponId)
+      .filter((id): id is string => Boolean(id));
+    // 두 쿠폰을 합쳐도 플랜 금액을 넘길 수는 없다(결제 금액이 음수가 되므로).
+    discount = Math.min(
+      resolved.reduce((sum, c) => sum + c.amount, 0),
+      plan.price,
+    );
   }
 
   const expectedAmount = plan.price - discount;
@@ -246,7 +264,7 @@ export async function verifyPayment(impUid: string): Promise<VerifyOutcome> {
         plan,
         amount: paidAmount,
         meta,
-        couponId,
+        couponIds,
         discount,
       };
 
@@ -298,7 +316,7 @@ export async function recordOrder(input: {
   plan: Plan;
   amount: number;
   meta: OrderMeta | null;
-  couponId?: string | null;
+  couponIds?: string[];
 }) {
   console.info("[payment] 주문 확정:", {
     source: input.source,
@@ -306,7 +324,7 @@ export async function recordOrder(input: {
     merchantUid: input.merchantUid,
     plan: input.plan.id,
     amount: input.amount,
-    coupon: input.meta?.couponCode ?? null,
+    coupons: input.meta?.couponCodes ?? null,
     customer: input.meta
       ? { name: input.meta.name, email: input.meta.email, phone: input.meta.phone }
       : null,
@@ -314,7 +332,7 @@ export async function recordOrder(input: {
 
   // 쿠폰 사용 처리. 완료 라우트와 웹훅이 같은 결제를 두 번 보고하므로
   // markCouponUsed 는 아직 미사용인 경우에만 갱신한다(멱등).
-  if (input.couponId) await markCouponUsed(input.couponId);
+  for (const couponId of input.couponIds ?? []) await markCouponUsed(couponId);
 
   await recordOrderRow({
     impUid: input.impUid,

@@ -6,7 +6,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { X, ArrowRight, SpinnerGap, CheckCircle, Info } from "@phosphor-icons/react";
-import { launchPromo, launchTotalBenefit } from "@/lib/data";
+import {
+  couponDefs,
+  couponKinds,
+  isEventCouponActive,
+  launchPromo,
+  totalCouponBenefit,
+  type CouponKind,
+} from "@/lib/data";
 
 // 이벤트 개편으로 문구가 완전히 바뀌었으므로 키도 갈아끼워, 예전 팝업을
 // "오늘 하루 보지 않기"로 닫았던 방문자에게도 새 안내가 한 번은 노출되게 한다.
@@ -30,13 +37,28 @@ function nextMidnight(): number {
   return d.getTime();
 }
 
+/** 발급 결과 한 장. 서버 응답(IssueCouponResult)에서 화면에 필요한 것만 추린다. */
+type IssuedCoupon = {
+  kind: CouponKind;
+  code: string;
+  /** 이번에 새로 받았는지 (false 면 전에 받아 둔 쿠폰) */
+  fresh: boolean;
+  used: boolean;
+};
+
 /** 쿠폰 버튼 상태 — idle 외에는 버튼 자리에 결과를 보여준다. */
 type CouponState =
   | { kind: "idle" }
   | { kind: "loading" }
-  | { kind: "issued"; code: string }
-  | { kind: "already"; code: string; used: boolean }
+  | { kind: "done"; coupons: IssuedCoupon[] }
   | { kind: "error"; message: string };
+
+type IssueResult = {
+  kind: CouponKind;
+  status: "issued" | "already" | "expired" | "unavailable";
+  code?: string;
+  usedAt?: string | null;
+};
 
 export default function LaunchPopup() {
   const [open, setOpen] = useState(false);
@@ -66,14 +88,23 @@ export default function LaunchPopup() {
         return;
       }
 
-      const data = await res.json().catch(() => null);
+      const data = (await res.json().catch(() => null)) as
+        | { status?: string; results?: IssueResult[] }
+        | null;
 
-      if (data?.status === "issued") {
-        setCoupon({ kind: "issued", code: data.code });
-        return;
-      }
-      if (data?.status === "already") {
-        setCoupon({ kind: "already", code: data.code, used: Boolean(data.usedAt) });
+      const issued: IssuedCoupon[] = (data?.results ?? [])
+        .filter((r): r is IssueResult & { code: string } =>
+          Boolean(r.code) && (r.status === "issued" || r.status === "already"),
+        )
+        .map((r) => ({
+          kind: r.kind,
+          code: r.code,
+          fresh: r.status === "issued",
+          used: Boolean(r.usedAt),
+        }));
+
+      if (issued.length > 0) {
+        setCoupon({ kind: "done", coupons: issued });
         return;
       }
 
@@ -232,7 +263,7 @@ export default function LaunchPopup() {
                     </p>
                     <p className="mt-1 flex items-baseline justify-center gap-0.5">
                       <span className="font-display text-[40px] font-extrabold leading-none tracking-tightest text-ink">
-                        {launchTotalBenefit.toLocaleString("ko-KR")}
+                        {totalCouponBenefit.toLocaleString("ko-KR")}
                       </span>
                       <span className="text-[18px] font-extrabold text-ink">
                         원
@@ -249,8 +280,8 @@ export default function LaunchPopup() {
                     보이고, 어차피 발급 권한은 서버가 확인해야 하기 때문.
                   */}
                   <div className="px-5 pb-6">
-                    {coupon.kind === "issued" || coupon.kind === "already" ? (
-                      <CouponResult state={coupon} onClose={close} />
+                    {coupon.kind === "done" ? (
+                      <CouponResult coupons={coupon.coupons} onClose={close} />
                     ) : (
                       <>
                         <button
@@ -299,22 +330,52 @@ export default function LaunchPopup() {
               </div>
             </div>
 
-            {/* 이벤트로 무상 제공하는 유상 옵션 — 라벨과 정가를 나란히 보여준다. */}
-            <ul className="mt-7 space-y-2">
-              {launchPromo.benefits.map((b) => (
-                <li
-                  key={b.label}
-                  className="flex items-center justify-between gap-3 rounded-xl bg-paper px-4 py-2.5"
-                >
-                  <span className="text-[14px] font-bold text-ink sm:text-[15px]">
-                    {b.label}
-                  </span>
-                  <span className="whitespace-nowrap font-display text-[14px] font-extrabold text-accent sm:text-[15px]">
-                    (+{b.value.toLocaleString("ko-KR")})
-                  </span>
-                </li>
-              ))}
-            </ul>
+            {/*
+              쿠폰 두 장의 구성. 쿠폰 이름과 금액을 머리에 두고, 그 아래에
+              무엇을 받는지(무상 제공되는 유상 옵션)를 정가와 함께 펼친다.
+            */}
+            <div className="mt-7 space-y-3">
+              {couponKinds.map((kind) => {
+                const def = couponDefs[kind];
+                const closed = kind === "event" && !isEventCouponActive();
+
+                return (
+                  <div
+                    key={kind}
+                    className={`rounded-2xl bg-paper px-4 py-3.5 ${closed ? "opacity-50" : ""}`}
+                  >
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="text-[15px] font-extrabold text-ink sm:text-[16px]">
+                        {def.name}
+                        {def.memberOnly && (
+                          <span className="ml-1.5 align-middle text-[11px] font-bold text-muted">
+                            회원 전용
+                          </span>
+                        )}
+                      </span>
+                      <span className="whitespace-nowrap font-display text-[16px] font-extrabold text-accent">
+                        {def.amount.toLocaleString("ko-KR")}원
+                      </span>
+                    </div>
+                    <ul className="mt-2.5 space-y-1.5 border-t border-line pt-2.5">
+                      {def.includes.map((item) => (
+                        <li
+                          key={item.label}
+                          className="flex items-baseline justify-between gap-3 text-[13px]"
+                        >
+                          <span className="font-medium text-ink">{item.label}</span>
+                          {item.value !== undefined && (
+                            <span className="whitespace-nowrap text-muted">
+                              (+{item.value.toLocaleString("ko-KR")})
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
 
             {/* 하단 작은 글씨 — 이벤트 안내문.
                 sm 이상에서는 notice 배열의 줄 그대로(조건 / 결과) 끊고,
@@ -354,33 +415,39 @@ export default function LaunchPopup() {
  * 팝업이 겹쳐 닫는 동선이 두 겹이 되기 때문.
  */
 function CouponResult({
-  state,
+  coupons,
   onClose,
 }: {
-  state: { kind: "issued"; code: string } | { kind: "already"; code: string; used: boolean };
+  coupons: IssuedCoupon[];
   onClose: () => void;
 }) {
-  const issued = state.kind === "issued";
-  const message = issued
+  const fresh = coupons.some((c) => c.fresh);
+  const message = fresh
     ? launchPromo.couponMessages.issued
-    : state.used
+    : coupons.every((c) => c.used)
       ? launchPromo.couponMessages.used
       : launchPromo.couponMessages.already;
 
   return (
     <div role="status" aria-live="polite" className="text-center">
       <p className="flex items-center justify-center gap-1.5 text-[15px] font-bold text-ink">
-        {issued ? (
+        {fresh ? (
           <CheckCircle size={18} weight="fill" className="text-accent" />
         ) : (
           <Info size={18} weight="fill" className="text-muted" />
         )}
-        {issued ? "쿠폰을 받았어요" : "이미 받으셨어요"}
+        {fresh ? `쿠폰 ${coupons.length}장을 받았어요` : "이미 받으셨어요"}
       </p>
       <p className="mt-1.5 break-keep text-[12px] leading-relaxed text-muted">{message}</p>
-      <p className="mt-2 font-mono text-[13px] font-bold tracking-wide text-ink">
-        {state.code}
-      </p>
+      <ul className="mt-2.5 space-y-1">
+        {coupons.map((c) => (
+          <li key={c.kind} className="text-[12px] text-muted">
+            <span className="font-semibold text-ink">{couponDefs[c.kind].name}</span>{" "}
+            <span className="font-mono tracking-wide text-ink">{c.code}</span>
+            {c.used && <span className="ml-1 text-faint">· 사용 완료</span>}
+          </li>
+        ))}
+      </ul>
       <Link
         href="/mypage"
         onClick={onClose}

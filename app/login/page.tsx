@@ -6,15 +6,13 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import LoginButtons from "@/components/LoginButtons";
 import { auth, authEnabled, googleEnabled, kakaoEnabled } from "@/lib/auth";
-import { launchPromo } from "@/lib/data";
+import { couponDefs, formatWon } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "로그인",
   description: "구글 또는 카카오 계정으로 마이핏웹에 로그인하고 상담·결제 내역을 확인하세요.",
   robots: { index: false, follow: false },
 };
-
-const signupBenefit = launchPromo.benefits.find((b) => b.label.includes("회원가입"));
 
 export default async function LoginPage({
   searchParams,
@@ -40,12 +38,10 @@ export default async function LoginPage({
             로그인하면 상담 진행 상황과 결제 내역을 한곳에서 확인할 수 있습니다.
           </p>
 
-          {signupBenefit && (
-            <p className="mt-5 rounded-xl bg-ink px-4 py-3 text-[13px] font-semibold text-paper">
-              로그인 후 {signupBenefit.label.replace("회원가입 ", "")}을 받을 수
-              있습니다. 계정당 1장이며 결제 시 바로 적용됩니다.
-            </p>
-          )}
+          <p className="mt-5 rounded-xl bg-ink px-4 py-3 text-[13px] font-semibold leading-relaxed text-paper">
+            로그인 후 {couponDefs.signup.name} {formatWon(couponDefs.signup.amount)}을
+            받을 수 있습니다. 계정당 1장이며, 결제 시 이벤트 쿠폰과 함께 적용됩니다.
+          </p>
 
           {searchParams.error && (
             <p className="mt-5 rounded-xl border border-accent/40 bg-accent/5 px-4 py-3 text-[13px] text-accent">

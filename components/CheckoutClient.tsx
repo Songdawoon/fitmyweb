@@ -11,11 +11,14 @@ import {
   Lock,
   Hourglass,
 } from "@phosphor-icons/react";
-import type { Plan } from "@/lib/data";
-import { formatKRW, brand } from "@/lib/data";
+import type { CouponDef, CouponKind, Plan } from "@/lib/data";
+import { formatKRW, formatWon, brand, couponDefs } from "@/lib/data";
 
-/** 결제에 쓸 수 있는 보유 쿠폰 — 서버가 세션으로 조회해 넘긴다. */
-type Coupon = { code: string; amount: number };
+/**
+ * 결제에 쓸 수 있는 쿠폰 — 서버가 세션과 이벤트 기간을 확인해 넘긴다.
+ * 이벤트 쿠폰은 비회원에게도 내려가고, 회원가입 쿠폰은 발급받은 계정에만 내려간다.
+ */
+export type CheckoutCoupon = CouponDef & { code: string };
 
 type Props = {
   plan: Plan;
@@ -23,7 +26,7 @@ type Props = {
   channelKey: string;
   pg: string;
   loggedIn: boolean;
-  coupon: Coupon | null;
+  coupons: CheckoutCoupon[];
   defaultEmail: string;
   defaultName: string;
 };
@@ -97,7 +100,7 @@ export default function CheckoutClient({
   channelKey,
   pg,
   loggedIn,
-  coupon,
+  coupons,
   defaultEmail,
   defaultName,
 }: Props) {
@@ -111,11 +114,22 @@ export default function CheckoutClient({
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
   const [receipt, setReceipt] = useState<{ impUid: string } | null>(null);
-  // 보유 쿠폰은 기본으로 적용해 둔다 — 있는 할인을 굳이 찾아 누르게 하지 않는다.
-  const [useCoupon, setUseCoupon] = useState(true);
+  // 쓸 수 있는 쿠폰은 기본으로 모두 적용해 둔다 — 두 쿠폰은 함께 쓸 수 있고,
+  // 있는 할인을 굳이 찾아 누르게 하지 않는다.
+  const [offKinds, setOffKinds] = useState<CouponKind[]>([]);
 
-  const discount = coupon && useCoupon ? Math.min(coupon.amount, plan.price) : 0;
+  const applied = coupons.filter((c) => !offKinds.includes(c.kind));
+  // 합산 할인이 플랜 금액을 넘기면 결제 금액이 음수가 되므로 여기서 자른다.
+  // 서버도 같은 방식으로 다시 계산한다(lib/portone.ts).
+  const discount = Math.min(
+    applied.reduce((sum, c) => sum + c.amount, 0),
+    plan.price,
+  );
   const payAmount = plan.price - discount;
+
+  function toggleCoupon(kind: CouponKind, on: boolean) {
+    setOffKinds((prev) => (on ? prev.filter((k) => k !== kind) : [...prev, kind]));
+  }
 
   // 채널키 또는 pg 코드 중 하나만 있으면 결제 가능하다.
   const configured = Boolean(impCode && !impCode.includes("00000000") && (channelKey || pg));
@@ -225,15 +239,17 @@ export default function CheckoutClient({
             // 서버가 결제 건만 보고 어떤 플랜인지 판별할 수 있도록 함께 기록한다.
             // V1 의 custom_data 는 문자열이라 JSON 으로 직렬화해서 넘긴다.
             //
-            // couponCode 도 여기에 실어 보낸다. 클라이언트가 보낸 값이지만
-            // 서버가 DB 에서 미사용 쿠폰인지 다시 확인하고 할인액을 직접 계산하므로
+            // couponCodes 도 여기에 실어 보낸다. 클라이언트가 보낸 값이지만
+            // 서버가 코드마다 유효성과 금액을 다시 확인해 할인액을 직접 계산하므로
             // (lib/portone.ts), 금액을 깎아 보내는 조작은 통하지 않는다.
             custom_data: JSON.stringify({
               planId: plan.id,
               name: form.name,
               email: form.email,
               phone: form.phone,
-              ...(discount > 0 && coupon ? { couponCode: coupon.code } : {}),
+              ...(applied.length > 0
+                ? { couponCodes: applied.map((c) => c.code) }
+                : {}),
             }),
             // 모바일에서는 이 주소로 되돌아오며, 위 useEffect 가 결과를 이어받는다.
             m_redirect_url: `${window.location.origin}/checkout?plan=${plan.id}`,
@@ -349,36 +365,85 @@ export default function CheckoutClient({
                 )}
               </ul>
 
-              {/* 보유 쿠폰 — 로그인 계정에 발급된 미사용 쿠폰이 있을 때만 */}
-              {coupon ? (
-                <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-ink/15 bg-mist px-4 py-3.5">
-                  <input
-                    type="checkbox"
-                    checked={useCoupon}
-                    onChange={(e) => setUseCoupon(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-baseline justify-between gap-2">
-                      <span className="text-[14px] font-bold text-ink">쿠폰 적용</span>
-                      <span className="whitespace-nowrap text-[14px] font-bold text-accent">
-                        −{formatKRW(coupon.amount)}
-                      </span>
-                    </span>
-                    <span className="mt-0.5 block truncate font-mono text-[12px] text-muted">
-                      {coupon.code}
-                    </span>
-                  </span>
-                </label>
-              ) : (
-                !loggedIn && (
-                  <p className="mt-6 rounded-2xl border border-dashed border-line px-4 py-3.5 text-[13px] leading-relaxed text-muted">
-                    <Link href="/login?callbackUrl=/checkout" className="font-semibold text-ink underline underline-offset-4">
-                      로그인
-                    </Link>
-                    하면 보유 쿠폰을 결제에 바로 적용할 수 있습니다.
-                  </p>
-                )
+              {/*
+                쓸 수 있는 쿠폰. 두 종류를 함께 적용할 수 있으므로 각각 켜고 끈다.
+                체크박스 아래에는 그 쿠폰으로 실제 무엇을 받는지(제공 항목과 정가)를
+                펼쳐 둔다 — 금액만 보고는 무엇이 포함되는지 알 수 없기 때문.
+              */}
+              {coupons.length > 0 && (
+                <div className="mt-6 grid gap-3">
+                  {coupons.map((c) => {
+                    const on = !offKinds.includes(c.kind);
+                    return (
+                      <div
+                        key={c.kind}
+                        className={`rounded-2xl border px-4 py-3.5 transition-colors ${
+                          on ? "border-ink/15 bg-mist" : "border-line"
+                        }`}
+                      >
+                        <label className="flex cursor-pointer items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={on}
+                            onChange={(e) => toggleCoupon(c.kind, e.target.checked)}
+                            className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-baseline justify-between gap-2">
+                              <span className="text-[14px] font-bold text-ink">{c.name}</span>
+                              <span className="whitespace-nowrap text-[14px] font-bold text-accent">
+                                −{formatKRW(c.amount)}
+                              </span>
+                            </span>
+                            <span className="mt-0.5 block truncate font-mono text-[12px] text-muted">
+                              {c.code}
+                            </span>
+                          </span>
+                        </label>
+
+                        <ul className="mt-3 grid gap-1.5 border-t border-line pt-3">
+                          {c.includes.map((item) => (
+                            <li
+                              key={item.label}
+                              className="flex items-start justify-between gap-3 text-[13px]"
+                            >
+                              <span className="flex items-start gap-2 text-ink">
+                                <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-accent" />
+                                {item.label}
+                              </span>
+                              {item.value !== undefined && (
+                                <span className="whitespace-nowrap text-muted">
+                                  {formatWon(item.value)}
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                        <p className="mt-2.5 break-keep text-[12px] leading-relaxed text-faint">
+                          {c.note}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/*
+                회원가입 쿠폰을 아직 못 받은 방문자에게 받는 경로를 안내한다.
+                비로그인이면 로그인부터, 로그인했는데 없으면 발급 팝업으로 보낸다.
+              */}
+              {!coupons.some((c) => c.kind === "signup") && (
+                <p className="mt-3 rounded-2xl border border-dashed border-line px-4 py-3.5 text-[13px] leading-relaxed text-muted">
+                  <Link
+                    href={loggedIn ? "/?coupon=1" : "/login?callbackUrl=/checkout"}
+                    className="font-semibold text-ink underline underline-offset-4"
+                  >
+                    {loggedIn ? "쿠폰 받기" : "로그인"}
+                  </Link>
+                  {loggedIn ? "를 누르고 " : "하고 "}
+                  {couponDefs.signup.name}({formatWon(couponDefs.signup.amount)})을 받으면
+                  이벤트 쿠폰과 함께 적용됩니다.
+                </p>
               )}
 
               <div className="mt-6 border-t border-line pt-6">
@@ -388,10 +453,14 @@ export default function CheckoutClient({
                       <span className="text-muted">플랜 금액</span>
                       <span className="text-ink">{formatKRW(plan.price)}</span>
                     </div>
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-muted">쿠폰 할인</span>
-                      <span className="font-semibold text-accent">−{formatKRW(discount)}</span>
-                    </div>
+                    {applied.map((c) => (
+                      <div key={c.kind} className="flex items-baseline justify-between">
+                        <span className="text-muted">{c.name}</span>
+                        <span className="font-semibold text-accent">
+                          −{formatKRW(c.amount)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 )}
                 <div className="flex items-baseline justify-between">
