@@ -719,16 +719,18 @@ export const kakaoConsult = {
 };
 
 /**
- * 상담 신청 폼 사용 여부. false 면 폼은 화면에 그대로 두되 입력을 막고,
- * 그 자리에 전화·이메일·카카오톡 등 직접 연락 수단을 먼저 보여준다
- * (components/ContactForm.tsx). 다시 열 때는 true 로만 바꾸면 된다.
+ * 상담 신청 폼 사용 여부. false 면 폼은 화면에서 감추고 전화·이메일·카카오톡
+ * 카드만 보여준다. 폼 마크업 자체는 components/ContactForm.tsx 에 그대로
+ * 남아 있으므로, 다시 열 때는 이 값을 true 로만 바꾸면 된다.
  */
 export const contactFormEnabled = false;
 
 export const contactPaused = {
   title: "상담 신청 폼은 잠시 닫아 두었습니다",
   body: "아래 연락처로 문의해 주시면 같은 담당자가 확인 후 빠르게 답변드립니다.",
-  formNotice: "현재 폼 접수를 받지 않습니다. 위 연락처를 이용해 주세요.",
+  /** 폼이 닫힌 동안 접수 요청에 답하는 문구(POST /api/contact). */
+  closedNotice:
+    "상담 신청 폼을 잠시 닫아 두었습니다. 전화·이메일·카카오톡으로 문의해 주세요.",
 };
 
 /**

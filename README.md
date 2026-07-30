@@ -231,11 +231,11 @@ CONTACT_TO_EMAIL=cs@fitmyweb.com         # 콤마로 여러 명 가능
 
 ### 상담 폼 닫기
 
-`lib/data.ts` 의 `contactFormEnabled` 가 `false` 면 홈 하단 상담 폼은 화면에
-남되 입력·제출이 막히고, 그 자리에 전화·이메일·카카오톡 카드가 먼저 노출됩니다
-(`components/ContactForm.tsx`). 서버(`POST /api/contact`)도 같은 플래그를 보고
-503 으로 거절하므로, 캐시된 예전 화면에서 들어오는 접수도 남지 않습니다. 다시
-열 때는 이 값을 `true` 로만 바꾸면 됩니다.
+`lib/data.ts` 의 `contactFormEnabled` 가 `false` 면 홈 하단 상담 폼은 화면에서
+사라지고 전화·이메일·카카오톡 카드만 노출됩니다. 폼 마크업은
+`components/ContactForm.tsx` 에 그대로 남아 있으므로 이 값을 `true` 로 되돌리면
+그대로 살아납니다. 서버(`POST /api/contact`)도 같은 플래그를 보고 503 으로
+거절하므로, 캐시된 예전 화면에서 들어오는 접수도 남지 않습니다.
 
 전화번호는 `brand.phone` 이 자리표시자(`010-0000-0000`)인 동안 카드에서 자동으로
 빠집니다(`hasRealPhone`). 실제 번호를 넣으면 바로 노출됩니다.

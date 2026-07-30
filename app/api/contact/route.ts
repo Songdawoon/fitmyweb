@@ -20,11 +20,11 @@ function str(value: unknown, max = 2000): string {
  * 알린 뒤 아무 데도 남지 않는 상황이 가장 나쁩니다.
  */
 export async function POST(req: Request) {
-  // 폼을 닫아 둔 동안에는 서버에서도 받지 않는다 — 화면만 막으면 캐시된
-  // 예전 페이지나 자동 제출로 접수가 들어와 아무도 확인하지 않게 된다.
+  // 폼을 닫아 둔 동안에는 서버에서도 받지 않는다 — 화면에서 감추기만 하면
+  // 캐시된 예전 페이지나 자동 제출로 접수가 들어와 아무도 확인하지 않게 된다.
   if (!contactFormEnabled) {
     return NextResponse.json(
-      { ok: false, message: contactPaused.formNotice },
+      { ok: false, message: contactPaused.closedNotice },
       { status: 503 },
     );
   }
