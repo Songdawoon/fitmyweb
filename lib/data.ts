@@ -206,6 +206,22 @@ export type PortfolioItem = {
 // 새 사례는 맨 앞에 추가하면 최신순으로 노출되고, category 만 맞추면 필터에 자동 반영된다.
 export const portfolioSamples: PortfolioItem[] = [
   {
+    title: "아이가 말하는 시간을 숫자로 증명하고 무료 레벨테스트로 연결하는 초등 영어학원 사이트",
+    industry: "초등 영어학원 · 전국 60개 지점",
+    focus: "무료 레벨테스트 신청 · 지점 찾기",
+    category: "etc",
+    url: "https://fitmyweb-portfolio-22.vercel.app",
+    image: "/portfolio/tellmemore.jpg",
+  },
+  {
+    title: "수업 방식을 먼저 보여주고 60분 무료 진단으로 연결하는 초등 수학학원 사이트",
+    industry: "초등 수학학원 · 12개 지점",
+    focus: "무료 진단 신청 · 지점 찾기",
+    category: "etc",
+    url: "https://fitmyweb-portfolio-21.vercel.app",
+    image: "/portfolio/sussori.jpg",
+  },
+  {
     title: "먹그림 컬렉션과 내 기종을 골라 주문하는 수제 휴대폰 케이스 브랜드몰",
     industry: "수제 휴대폰 케이스",
     focus: "컬렉션 · 기종 선택 후 주문",
