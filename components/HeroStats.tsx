@@ -42,7 +42,7 @@ export default function HeroStats() {
       <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-line bg-paper shadow-[0_30px_70px_-40px_rgba(16,23,51,0.4)]">
         <div className="absolute inset-x-0 top-0 z-10 flex justify-center pt-6">
           <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-faint">
-            MY FIT WEB · 성과
+            FIT MY WEB · 성과
           </span>
         </div>
 

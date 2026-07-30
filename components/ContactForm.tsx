@@ -154,7 +154,7 @@ export default function ContactForm() {
                 className="field"
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
-                placeholder="마이핏 컴퍼니"
+                placeholder="예: OO컴퍼니"
               />
             </Field>
             <Field label="연락처" error={errors.phone} required>

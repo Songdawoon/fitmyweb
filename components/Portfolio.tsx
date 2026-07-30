@@ -56,7 +56,7 @@ export default function Portfolio() {
         />
         <Reveal>
           <p className="max-w-[38ch] text-[15px] leading-relaxed text-muted md:text-right">
-            마이핏웹의 포트폴리오는 디자인 결과만 나열하지 않고 고객의 문제,
+            핏마이웹의 포트폴리오는 디자인 결과만 나열하지 않고 고객의 문제,
             제안한 방향과 실제 해결 내용을 함께 보여줍니다.
           </p>
         </Reveal>

@@ -9,7 +9,7 @@ export default function FitSection() {
       <div className="container-page section-x py-24 sm:py-32">
         <SectionHeading
           eyebrow="The FIT System"
-          title={["마이핏웹은", "네 가지를 맞춥니다"]}
+          title={["핏마이웹은", "네 가지를 맞춥니다"]}
           desc="업종과 사업 목적에 따라 기획·콘텐츠·디자인·기능을 하나씩 맞춰 커스텀 홈페이지를 완성합니다."
         />
 

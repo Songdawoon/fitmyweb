@@ -1,4 +1,4 @@
-# 마이핏웹 — MY FIT WEB
+# 핏마이웹 — FIT MY WEB
 
 > 내 사업에 딱 맞는 홈페이지, 합리적인 비용으로
 
@@ -27,7 +27,7 @@ npm run dev                        # http://localhost:3000
 app/
   page.tsx        메인 (Hero → 문제공감 → 4가지 FIT → 비용의 이유 → 제작과정
                         → 포트폴리오 → 플랜 → 추가서비스 → 신뢰약속 → 후기 → FAQ → 상담CTA)
-  about/page.tsx  마이핏웹 소개 (미션·제작철학·FIT)
+  about/page.tsx  핏마이웹 소개 (미션·제작철학·FIT)
   checkout/       플랜 결제 (?plan=startfit|bizfit) — PortOne 결제
   api/
     contact/        상담 신청 접수 → 담당자 메일 발송

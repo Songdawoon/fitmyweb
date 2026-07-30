@@ -10,7 +10,7 @@ import { couponDefs, formatWon } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "로그인",
-  description: "구글 또는 카카오 계정으로 마이핏웹에 로그인하고 상담·결제 내역을 확인하세요.",
+  description: "구글 또는 카카오 계정으로 핏마이웹에 로그인하고 상담·결제 내역을 확인하세요.",
   robots: { index: false, follow: false },
 };
 

@@ -8,7 +8,7 @@ import Reveal from "@/components/Reveal";
 import { about, brand, fits } from "@/lib/data";
 
 export const metadata: Metadata = {
-  title: "마이핏웹 소개",
+  title: "핏마이웹 소개",
   description: about.intro,
 };
 

@@ -14,7 +14,7 @@ const cols = [
   {
     title: "브랜드",
     links: [
-      { label: "마이핏웹 소개", href: "/about" },
+      { label: "핏마이웹 소개", href: "/about" },
       { label: "FAQ", href: "/#faq" },
       { label: "상담 문의", href: "/#contact" },
     ],
