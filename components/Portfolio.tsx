@@ -55,7 +55,9 @@ export default function Portfolio() {
           title={["사업의 강점을 찾아", "웹사이트로 완성합니다"]}
         />
         <Reveal>
-          <p className="max-w-[38ch] text-[15px] leading-relaxed text-muted md:text-right">
+          {/* break-keep 이 없으면 "보여줍니다" 가 어절 중간에서 잘려 "다." 만 다음
+              줄로 내려간다. 한글 본문은 어절 단위로만 끊는다. */}
+          <p className="max-w-[38ch] break-keep text-[15px] leading-relaxed text-muted md:text-right">
             핏마이웹의 포트폴리오는 디자인 결과만 나열하지 않고 고객의 문제,
             제안한 방향과 실제 해결 내용을 함께 보여줍니다.
           </p>
