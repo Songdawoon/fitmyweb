@@ -12,11 +12,11 @@ import {
   Hourglass,
 } from "@phosphor-icons/react";
 import type { CouponDef, CouponKind, Plan } from "@/lib/data";
-import { formatKRW, formatWon, brand, couponDefs } from "@/lib/data";
+import { formatKRW, formatWon, brand } from "@/lib/data";
 
 /**
  * 결제에 쓸 수 있는 쿠폰 — 서버가 세션과 이벤트 기간을 확인해 넘긴다.
- * 이벤트 쿠폰은 비회원에게도 내려가고, 회원가입 쿠폰은 발급받은 계정에만 내려간다.
+ * 계정에 발급받아 둔 쿠폰만 내려온다(받지 않은 쿠폰은 missingCoupons 로 간다).
  */
 export type CheckoutCoupon = CouponDef & { code: string };
 
@@ -27,6 +27,8 @@ type Props = {
   pg: string;
   loggedIn: boolean;
   coupons: CheckoutCoupon[];
+  /** 아직 안 받았지만 지금 받을 수 있는 쿠폰 — 받으러 가는 길만 안내한다. */
+  missingCoupons: CouponDef[];
   defaultEmail: string;
   defaultName: string;
 };
@@ -101,6 +103,7 @@ export default function CheckoutClient({
   pg,
   loggedIn,
   coupons,
+  missingCoupons,
   defaultEmail,
   defaultName,
 }: Props) {
@@ -429,11 +432,12 @@ export default function CheckoutClient({
               )}
 
               {/*
-                회원가입 쿠폰을 아직 못 받은 방문자에게 받는 경로를 안내한다.
+                아직 받지 않은 쿠폰이 있으면 받는 경로를 안내한다. 받아 둔 쿠폰만
+                위에 노출되므로, 여기가 유일한 안내 지점이다.
                 비로그인이면 로그인부터, 로그인했는데 없으면 발급 팝업으로 보낸다.
               */}
-              {!coupons.some((c) => c.kind === "signup") && (
-                <p className="mt-3 rounded-2xl border border-dashed border-line px-4 py-3.5 text-[13px] leading-relaxed text-muted">
+              {missingCoupons.length > 0 && (
+                <p className="mt-3 break-keep rounded-2xl border border-dashed border-line px-4 py-3.5 text-[13px] leading-relaxed text-muted">
                   <Link
                     href={loggedIn ? "/?coupon=1" : "/login?callbackUrl=/checkout"}
                     className="font-semibold text-ink underline underline-offset-4"
@@ -441,8 +445,9 @@ export default function CheckoutClient({
                     {loggedIn ? "쿠폰 받기" : "로그인"}
                   </Link>
                   {loggedIn ? "를 누르고 " : "하고 "}
-                  {couponDefs.signup.name}({formatWon(couponDefs.signup.amount)})을 받으면
-                  이벤트 쿠폰과 함께 적용됩니다.
+                  {missingCoupons.map((d) => d.name).join(" · ")}(
+                  {formatWon(missingCoupons.reduce((sum, d) => sum + d.amount, 0))})을
+                  받으면 이 결제에 바로 적용됩니다.
                 </p>
               )}
 

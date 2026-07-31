@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import {
-  EVENT_COUPON_CODE,
   couponDefs,
+  couponKinds,
   getPlan,
   isEventCouponActive,
   plans,
+  type CouponDef,
 } from "@/lib/data";
 import CheckoutClient, { type CheckoutCoupon } from "@/components/CheckoutClient";
 import { auth } from "@/lib/auth";
@@ -29,30 +30,32 @@ export default async function CheckoutPage({
    * 적용 가능한 쿠폰은 서버에서 뽑아 넘긴다. 클라이언트가 코드를 지어내도
    * 결제 검증(lib/portone.ts)에서 걸리지만, 화면에는 쓸 수 있는 것만 보여야 한다.
    *
-   * 이벤트 쿠폰은 비회원도 쓸 수 있어 공개 코드로 붙이고, 계정에 저장해 둔
-   * 쿠폰이 있으면 그쪽을 우선 쓴다(사용 여부가 마이페이지에 남도록).
-   * 회원가입 쿠폰은 계정에 발급된 경우에만 노출한다.
+   * 두 쿠폰 모두 "받아 둔 것" 만 노출한다 — 팝업에서 쿠폰을 받지 않은 사람에게
+   * 할인이 미리 적용된 화면을 보여주지 않기 위함. 발급받지 않은 쿠폰은 여기서
+   * 빠지고, 아래 CheckoutClient 가 받으러 가는 경로를 안내한다.
    */
   const session = await auth();
   const myCoupons = session?.user?.id ? await getUnusedCoupons(session.user.id) : [];
 
   const applicableCoupons: CheckoutCoupon[] = [];
+  // 아직 안 받았지만 지금 받을 수 있는 쿠폰 — 화면에서 받으러 가는 길을 안내한다.
+  const missingCoupons: CouponDef[] = [];
 
-  if (isEventCouponActive()) {
-    const owned = myCoupons.find((c) => c.kind === "event");
-    applicableCoupons.push({
-      ...couponDefs.event,
-      code: owned?.code ?? EVENT_COUPON_CODE,
-      amount: owned?.amount ?? couponDefs.event.amount,
-    });
-  }
+  for (const kind of couponKinds) {
+    // 기간이 끝난 이벤트 쿠폰은 이미 발급받았어도 쓸 수 없고, 권할 수도 없다
+    // (resolveCoupons 와 같은 기준).
+    if (kind === "event" && !isEventCouponActive()) continue;
 
-  const ownedSignup = myCoupons.find((c) => c.kind === "signup");
-  if (ownedSignup) {
+    const owned = myCoupons.find((c) => c.kind === kind);
+    if (!owned) {
+      missingCoupons.push(couponDefs[kind]);
+      continue;
+    }
+
     applicableCoupons.push({
-      ...couponDefs.signup,
-      code: ownedSignup.code,
-      amount: ownedSignup.amount,
+      ...couponDefs[kind],
+      code: owned.code,
+      amount: owned.amount,
     });
   }
 
@@ -76,6 +79,7 @@ export default async function CheckoutPage({
           pg={process.env.NEXT_PUBLIC_PORTONE_PG ?? ""}
           loggedIn={Boolean(session?.user)}
           coupons={applicableCoupons}
+          missingCoupons={missingCoupons}
           defaultEmail={session?.user?.email ?? ""}
           defaultName={session?.user?.name ?? ""}
         />

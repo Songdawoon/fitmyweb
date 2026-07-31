@@ -5,7 +5,6 @@ import { randomBytes } from "node:crypto";
 
 import { getDb, coupons, inquiries, orders, users } from "@/lib/db";
 import {
-  EVENT_COUPON_CODE,
   couponDefs,
   couponKinds,
   isEventCouponActive,
@@ -177,12 +176,15 @@ export type ResolvedCoupon = {
 /**
  * 결제에 적용된 쿠폰 코드들을 실제 할인으로 바꾼다.
  *
- * 클라이언트가 보낸 것은 코드뿐이고 금액은 여기서 정한다 — 이벤트 쿠폰은
- * 데이터 파일의 정가에서, 계정 쿠폰은 DB 행에서 읽는다. 하나라도 무효면
- * null 을 돌려 결제 검증 자체를 실패시킨다(금액이 맞지 않게 되므로).
+ * 클라이언트가 보낸 것은 코드뿐이고 금액은 여기서 정한다 — 두 종류 모두 계정에
+ * 발급된 DB 행에서 읽는다. 하나라도 무효면 null 을 돌려 결제 검증 자체를
+ * 실패시킨다(금액이 맞지 않게 되므로).
  *
- * 같은 종류가 두 번 들어오면 뒤엣것은 무시한다 — 이벤트 쿠폰을 공개 코드와
- * 계정 쿠폰으로 두 번 적용하는 것을 막는 지점이다.
+ * 발급받지 않은 쿠폰으로는 할인을 받을 수 없다. 예전에는 이벤트 쿠폰만 DB 행
+ * 없는 공개 코드로 통과시켰는데, 쿠폰을 받은 적 없는 사람에게도 할인이 붙는
+ * 문제가 있어 없앴다. 이제 모든 쿠폰은 "받아 둔 것" 이어야 한다.
+ *
+ * 같은 종류가 두 번 들어오면 뒤엣것은 무시한다.
  */
 export async function resolveCoupons(codes: string[]): Promise<ResolvedCoupon[] | null> {
   const resolved: ResolvedCoupon[] = [];
@@ -191,19 +193,6 @@ export async function resolveCoupons(codes: string[]): Promise<ResolvedCoupon[] 
   for (const raw of codes) {
     const code = raw.trim();
     if (!code) continue;
-
-    if (code === EVENT_COUPON_CODE) {
-      if (!isEventCouponActive()) return null;
-      if (seen.has("event")) continue;
-      seen.add("event");
-      resolved.push({
-        kind: "event",
-        code,
-        amount: couponDefs.event.amount,
-        couponId: null,
-      });
-      continue;
-    }
 
     const row = await findRedeemableCoupon(code);
     if (!row) return null;

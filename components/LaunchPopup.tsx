@@ -60,6 +60,13 @@ type IssueResult = {
   usedAt?: string | null;
 };
 
+/**
+ * "회원 전용" 배지는 종류마다 조건이 다를 때만 뜻이 있다. 지금은 두 쿠폰 모두
+ * 계정 발급이 필요해 모든 줄에 같은 배지가 붙으므로 감춘다 — 비회원도 쓸 수 있는
+ * 쿠폰이 다시 생기면 그때 저절로 다시 나온다.
+ */
+const showMemberBadge = couponKinds.some((k) => !couponDefs[k].memberOnly);
+
 export default function LaunchPopup() {
   const [open, setOpen] = useState(false);
   const [dontShowToday, setDontShowToday] = useState(false);
@@ -347,7 +354,7 @@ export default function LaunchPopup() {
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="text-[15px] font-extrabold text-ink sm:text-[16px]">
                         {def.name}
-                        {def.memberOnly && (
+                        {def.memberOnly && showMemberBadge && (
                           <span className="ml-1.5 align-middle text-[11px] font-bold text-muted">
                             회원 전용
                           </span>

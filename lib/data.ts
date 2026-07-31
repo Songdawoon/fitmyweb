@@ -681,9 +681,11 @@ export const faqs = [
 /**
  * 쿠폰은 두 종류이고, 한 결제에 함께 적용된다(최대 80만원).
  *
- *   event  — 8월 이벤트 쿠폰. 비회원도 결제 화면에서 바로 쓸 수 있고,
- *            회원은 계정에 저장해 마이페이지에서 확인할 수 있다.
- *   signup — 회원가입 쿠폰. 로그인한 계정만 발급받고 사용할 수 있다.
+ *   event  — 8월 이벤트 쿠폰. 기간 안에만 발급·사용할 수 있다.
+ *   signup — 회원가입 쿠폰.
+ *
+ * 둘 다 팝업의 "쿠폰 다운받기" 로 계정에 발급받아야 결제 화면에 나온다.
+ * 받아 두지 않은 쿠폰은 화면에도 뜨지 않고 결제 검증에서도 통과하지 않는다.
  *
  * "계정당 종류별 1장" 은 앱 로직이 아니라 coupons 테이블의 유니크 인덱스
  * (user_id, kind)가 보증한다.
@@ -703,7 +705,10 @@ export type CouponDef = {
   kind: CouponKind;
   name: string;
   amount: number;
-  /** true 면 로그인 계정만 발급·사용할 수 있다. */
+  /**
+   * true 면 로그인 계정만 발급·사용할 수 있다. 현재는 두 종류 모두 계정 발급이
+   * 필요해 항상 true 지만, 나중에 비회원 쿠폰이 생길 수 있어 필드는 남겨 둔다.
+   */
   memberOnly: boolean;
   /** 결제 화면에서 "이 쿠폰으로 무엇을 받는지" 를 밝히는 목록. */
   includes: { label: string; value?: number }[];
@@ -716,9 +721,9 @@ export const couponDefs: Record<CouponKind, CouponDef> = {
     kind: "event",
     name: "8월 이벤트 쿠폰",
     amount: eventCouponIncludes.reduce((sum, b) => sum + b.value, 0),
-    memberOnly: false,
+    memberOnly: true,
     includes: eventCouponIncludes,
-    note: "제작 계약 시 위 유상 옵션을 무상으로 제공합니다. 로그인 없이도 결제 화면에서 사용할 수 있습니다.",
+    note: "제작 계약 시 위 유상 옵션을 무상으로 제공합니다. 팝업에서 받아 둔 쿠폰만 결제 화면에 적용됩니다.",
   },
   signup: {
     kind: "signup",
@@ -731,15 +736,6 @@ export const couponDefs: Record<CouponKind, CouponDef> = {
 };
 
 export const couponKinds: CouponKind[] = ["event", "signup"];
-
-/**
- * 비회원이 결제 화면에서 쓰는 이벤트 쿠폰 코드.
- *
- * 계정에 저장된 쿠폰과 달리 DB 행이 없는 공개 코드다. 이벤트 기간 동안
- * 누구에게나 동일하게 적용되는 할인이므로 코드가 알려져도 문제가 없고,
- * 할인액은 서버가 이 상수에서 직접 읽는다(클라이언트 값은 믿지 않는다).
- */
-export const EVENT_COUPON_CODE = "MFW-AUGUST-EVENT";
 
 /** 이벤트 쿠폰 종료 시각(KST). 이 시각 이후에는 발급도 적용도 되지 않는다. */
 export const EVENT_COUPON_ENDS_AT = new Date("2026-08-31T23:59:59+09:00");
@@ -754,8 +750,8 @@ export function isEventCouponActive(now: Date = new Date()): boolean {
 export const totalCouponBenefit = couponDefs.event.amount + couponDefs.signup.amount;
 
 // 홈 첫 진입 시 노출되는 런칭 기념 이벤트 팝업 카피.
-// 안내(쿠폰 구성)와 행동(쿠폰 발급)이 함께 있는 팝업이다. 로그인하면 두 쿠폰이
-// 계정에 저장되고, 비회원은 이벤트 쿠폰만 결제 화면에서 바로 쓸 수 있다.
+// 안내(쿠폰 구성)와 행동(쿠폰 발급)이 함께 있는 팝업이다. 여기서 받아야 두
+// 쿠폰이 계정에 저장되고, 그때부터 결제 화면에 나온다.
 export const launchPromo = {
   badge: "서비스 런칭 기념",
   sideLeft: ["런칭", "기념"],
@@ -778,7 +774,7 @@ export const launchPromo = {
   // 조건절 중간이 끊긴다. 의미 단위(조건 / 결과)로 직접 끊어 준다.
   notice: [
     `이벤트 쿠폰은 ${eventCouponPeriodLabel} 사용할 수 있고, 회원가입 쿠폰과 함께 적용됩니다.`,
-    "이벤트 쿠폰은 로그인 없이도 결제 화면에서 사용할 수 있습니다.",
+    "두 쿠폰 모두 여기서 받아 두어야 결제 화면에 적용됩니다.",
   ],
 };
 
