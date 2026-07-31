@@ -207,6 +207,14 @@ export type PortfolioItem = {
 // 새 사례는 맨 앞에 추가하면 최신순으로 노출되고, category 만 맞추면 필터에 자동 반영된다.
 export const portfolioSamples: PortfolioItem[] = [
   {
+    title: "테크니션 두 명이 찾아가 세차와 기본 점검을 한 번에 끝내는 출장 손세차 사이트",
+    industry: "출장 손세차 · 서울/경기",
+    focus: "요금 비교 · 예약 동선",
+    category: "etc",
+    url: "https://fitmyweb-portfolio-32.vercel.app",
+    image: "/portfolio/zwei.jpg",
+  },
+  {
     title: "내일 촬영에 필요한 장비를 당일 출고로 하루만 빌리는 촬영장비 렌탈 사이트",
     industry: "촬영장비 렌탈 · 성수동",
     focus: "기간별 요금 계산 · 재고 확인",
