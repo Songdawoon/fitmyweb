@@ -39,8 +39,7 @@ export default async function LoginPage({
           </p>
 
           <p className="mt-5 rounded-xl bg-ink px-4 py-3 text-[13px] font-semibold leading-relaxed text-paper">
-            로그인 후 {couponDefs.signup.name} {formatWon(couponDefs.signup.amount)}을
-            받을 수 있습니다. 계정당 1장이며, 결제 시 이벤트 쿠폰과 함께 적용됩니다.
+            회원가입하면 {formatWon(couponDefs.signup.amount)} 쿠폰을 드립니다.
           </p>
 
           {searchParams.error && (
