@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChatCircleDots } from "@phosphor-icons/react";
 import { kakaoConsult } from "@/lib/data";
+import { inboundChannel, track } from "@/lib/track";
 
 const ENTER_DELAY_MS = 900;
 
@@ -56,6 +57,7 @@ export default function KakaoFloat() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={kakaoConsult.label}
+              onClick={() => track("kakao_click", { where: "float", ...inboundChannel() })}
               className="group relative block outline-none"
             >
               {/* 툴팁 — absolute 로 띄워 앵커 폭에 포함시키지 않는다.

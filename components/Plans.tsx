@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, ArrowRight } from "@phosphor-icons/react/dist/ssr";
+import { Check, Minus, ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { plans, formatManwon } from "@/lib/data";
 import SectionHeading from "./SectionHeading";
 import Reveal from "./Reveal";
@@ -60,14 +60,33 @@ export default function Plans() {
                   ))}
                 </div>
 
-                <ul className="mt-6 flex flex-1 flex-col gap-2.5 border-t border-line pt-6">
-                  {plan.scope.map((s) => (
-                    <li key={s} className="flex items-start gap-2.5 text-[14px] text-ink">
-                      <Check size={16} weight="bold" className="mt-0.5 shrink-0 text-accent" />
-                      {s}
-                    </li>
-                  ))}
-                </ul>
+                <div className="mt-6 flex flex-1 flex-col border-t border-line pt-6">
+                  <p className="text-[12px] font-semibold uppercase tracking-wide text-faint">
+                    포함
+                  </p>
+                  <ul className="mt-3.5 flex flex-col gap-2.5">
+                    {plan.scope.map((s) => (
+                      <li key={s} className="flex items-start gap-2.5 text-[14px] text-ink">
+                        <Check size={16} weight="bold" className="mt-0.5 shrink-0 text-accent" />
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* 제외 범위를 포함 목록 바로 아래 같은 무게로 둔다.
+                      접어 두면 계약 후에야 확인하게 된다. */}
+                  <p className="mt-6 text-[12px] font-semibold uppercase tracking-wide text-faint">
+                    포함되지 않음
+                  </p>
+                  <ul className="mt-3.5 flex flex-col gap-2.5">
+                    {plan.excludes.map((s) => (
+                      <li key={s} className="flex items-start gap-2.5 text-[14px] text-muted">
+                        <Minus size={16} weight="bold" className="mt-0.5 shrink-0 text-faint" />
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
                 <div className="mt-8 flex flex-col gap-2.5">
                   {plan.payable ? (

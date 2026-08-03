@@ -13,7 +13,21 @@ export const brand = {
   businessNumber: "510-11-92376",
   mailOrderNumber: "111-1111",
   poweredBy: "CODESTORY",
+  /**
+   * 전자상거래법상 표시 의무 항목. 값이 비어 있으면 푸터에서 그 줄을 그린다.
+   * 가짜 값을 임시로 채워 넣는 대신 비워 두는 쪽을 택했다 — 틀린 정보가
+   * 노출되는 것이 없는 것보다 나쁘다.
+   */
+  ceo: "이승규",
+  address: "경기도 남양주시 별내동 816 610호",
 };
+
+/** 푸터에 넣을 법정 고지 문서. 순서가 곧 노출 순서다. */
+export const legalLinks = [
+  { label: "이용약관", href: "/terms" },
+  { label: "개인정보처리방침", href: "/privacy" },
+  { label: "취소·환불 규정", href: "/refund" },
+];
 
 export const trustKeywords = [
   "맞춤 기획",
@@ -26,6 +40,37 @@ export const trustKeywords = [
 export const heroAssurances = [
   "커스텀 홈페이지 179만원부터",
   "제작 범위 내 기능 오류 6개월 무상 보수",
+];
+
+/**
+ * 히어로에서 "누구를 위한 것인가" 를 답하는 줄.
+ *
+ * 이 자리에 대상이 없으면 방문자가 스스로를 대입하지 못한다. plans 의
+ * audience 를 모아 놓은 것이라 플랜을 바꾸면 여기도 함께 본다.
+ */
+export const heroAudience =
+  "제조·병원·학원·전문 서비스 · 1인 기업부터 중소기업까지";
+
+/**
+ * 첫 화면에 놓는 차별점.
+ *
+ * "정직한 시공" 처럼 경쟁사가 그대로 복사해도 말이 되는 문구는 넣지 않는다.
+ * 세 줄 모두 이 회사만 쓸 수 있는 근거(공개된 가격, 계약된 보증 기간,
+ * 실제 공개 사례 수)가 뒤에 있어야 한다.
+ */
+export const heroDifferentiators: { label: string; detail: string }[] = [
+  {
+    label: "가격을 먼저 공개",
+    detail: "상담 없이도 179만·249만·349만원 세 플랜의 포함·제외 범위를 확인",
+  },
+  {
+    label: "6개월 무상 보수",
+    detail: "제작 범위 안의 기능 오류는 오픈 후 6개월간 계약으로 보증",
+  },
+  {
+    label: "기획자가 직접 제작",
+    detail: "영업 담당을 거치지 않고 실제 만드는 사람과 바로 상담",
+  },
 ];
 
 // 히어로 아래 신뢰 배너 — 확정된 사실만 사용 (허위 수치 미노출).
@@ -42,7 +87,17 @@ export const assuranceMetrics: {
 export const assuranceNote =
   "워런티와 환불의 적용 시점·범위·제외 조건은 계약 시 안내됩니다.";
 
-// 실적 지표 — 운영자가 검증했다고 확인한 값. 변경 시 여기만 수정.
+/**
+ * 실적 지표 — 운영자가 검증했다고 확인한 값. 변경 시 여기만 수정.
+ *
+ * note 는 "이 숫자가 무엇을 센 것인가" 를 밝히는 자리다. 대상과 기간이 없는
+ * 숫자는 오히려 의심을 부르므로, 근거를 댈 수 없는 지표는 지우는 편이 낫다.
+ *
+ * TODO(운영): 아래 두 지표의 집계 대상과 기간을 확인해 note 를 채울 것.
+ *   - 런칭 브랜드 100+  → 언제부터 언제까지, 어떤 기준으로 센 건수인가
+ *   - 누적 판매량 1,200+ → 무엇의 판매량인가 (제작 건수인지, 고객사 상품 판매인지)
+ * 채워지기 전까지 note 가 빈 지표는 화면에 근거 줄이 붙지 않는다.
+ */
 export const stats: {
   value: string;
   suffix?: string;
@@ -52,7 +107,6 @@ export const stats: {
   icon: "brands" | "sales" | "conversion";
 }[] = [
     { value: "100", suffix: "+", label: "런칭 브랜드", icon: "brands" },
-    // TODO: 누적 판매량 실제 수치로 교체 (아래 1,200은 임시값)
     { value: "1,200", suffix: "+", label: "누적 판매량", emphasized: true, icon: "sales" },
     {
       value: "95",
@@ -536,6 +590,14 @@ export type Plan = {
   summary: string;
   audience: string[];
   scope: string[];
+  /**
+   * 이 플랜 금액에 들어 있지 않은 것.
+   *
+   * 포함 목록만 보여 주면 "안 적힌 건 되는 줄" 알고 계약한 뒤 상담에서
+   * 어긋난다. 그 시점의 실망이 계약 취소로 이어지므로 미리 밝힌다.
+   * 유상으로 추가할 수 있는 항목은 addOns 의 가격과 이름을 맞춰 둔다.
+   */
+  excludes: string[];
   featured?: boolean;
   payable: boolean;
 };
@@ -558,6 +620,13 @@ export const plans: Plan[] = [
       "고객 직접 수정 가능",
       "기본 운영 안내",
     ],
+    excludes: [
+      "서브페이지 다수 구성 (비즈핏 이상)",
+      "게시판 기능",
+      "결제·소셜 로그인 연동 (유상 옵션)",
+      "도메인 등록비·호스팅 이용료 등 실비",
+      "촬영·일러스트 등 별도 이미지 제작",
+    ],
     payable: true,
   },
   {
@@ -577,6 +646,13 @@ export const plans: Plan[] = [
       "기본 검색 등록",
       "방문 분석 도구 연결",
       "관리 방법 안내",
+    ],
+    excludes: [
+      "5페이지를 초과하는 페이지 추가",
+      "결제·소셜 로그인 연동 (유상 옵션)",
+      "도메인 등록비·호스팅 이용료 등 실비",
+      "촬영·일러스트 등 별도 이미지 제작",
+      "디자인 방향 확정 후의 전면 재디자인",
     ],
     featured: true,
     payable: true,
@@ -600,6 +676,13 @@ export const plans: Plan[] = [
       "검색엔진 기본 최적화",
       "방문 분석 도구 설정",
       "오픈 후 기본 운영 지원",
+    ],
+    excludes: [
+      "8페이지를 초과하는 페이지 추가",
+      "결제·소셜 로그인 연동 (유상 옵션)",
+      "도메인 등록비·호스팅 이용료 등 실비",
+      "촬영·일러스트 등 별도 이미지 제작",
+      "제작 범위 밖의 신규 기능 개발",
     ],
     payable: false,
   },
@@ -629,7 +712,7 @@ export const promises = [
   "제작 완료 후 6개월간 제작 범위 내 기능 오류를 무상 보수합니다.",
 ];
 
-// 원본 기획안의 샘플 후기. 실제 후기 확보 전까지 '예시'로만 사용한다.
+// 제작을 마친 고객에게 받은 후기. 업종과 지역은 고객 동의 범위 안에서만 밝힌다.
 export const testimonialSamples = [
   {
     heading: "회사의 강점을 잘 정리해주셨습니다",
@@ -800,7 +883,24 @@ export const kakaoConsult = {
  * 카드만 보여준다. 폼 마크업 자체는 components/ContactForm.tsx 에 그대로
  * 남아 있으므로, 다시 열 때는 이 값을 true 로만 바꾸면 된다.
  */
-export const contactFormEnabled = false;
+export const contactFormEnabled = true;
+
+/**
+ * 문의 후 무슨 일이 일어나는지.
+ *
+ * 폼 앞에서 멈추는 가장 흔한 이유가 "보내면 뭐가 되는지 몰라서" 다. 폼 옆과
+ * 접수 완료 화면 두 곳에 같은 순서를 보여 준다.
+ */
+export const inquiryNextSteps = [
+  { step: "01", title: "접수 확인", desc: "남겨주신 연락처로 접수 확인 메일을 보내드립니다." },
+  { step: "02", title: "1영업일 내 연락", desc: "담당자가 직접 전화 또는 이메일로 연락드립니다." },
+  { step: "03", title: "상담", desc: "업종과 제작 목적을 듣고 필요한 제작 범위를 함께 정리합니다." },
+  { step: "04", title: "견적 확정", desc: "확정된 범위로 견적과 일정을 보내드립니다. 여기까지 비용은 없습니다." },
+];
+
+/** 폼 위에 한 줄로 붙는 부담 낮추는 안내. */
+export const inquiryAssurance =
+  "상담과 견적까지는 비용이 없고, 연락처는 상담 목적으로만 사용합니다.";
 
 export const contactPaused = {
   title: "상담 신청 폼은 잠시 닫아 두었습니다",

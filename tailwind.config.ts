@@ -25,8 +25,10 @@ const config: Config = {
         "kakao-ink": "#191600",
       },
       fontFamily: {
-        sans: ["Pretendard Variable", "Pretendard", "system-ui", "sans-serif"],
-        display: ["Cabinet Grotesk", "Pretendard", "sans-serif"],
+        // 실제 폰트 이름 대신 next/font 가 만들어 주는 CSS 변수를 쓴다.
+        // 변수 안에 fallback 지표까지 들어 있어 로딩 중 레이아웃 이동이 줄어든다.
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "var(--font-sans)", "sans-serif"],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
       letterSpacing: {

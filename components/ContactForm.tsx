@@ -6,6 +6,7 @@ import {
   CheckCircle,
   SpinnerGap,
   ArrowRight,
+  CaretDown,
   Phone,
   EnvelopeSimple,
   ChatCircleDots,
@@ -16,8 +17,11 @@ import {
   contactFormEnabled,
   contactPaused,
   hasRealPhone,
+  inquiryAssurance,
+  inquiryNextSteps,
   kakaoConsult,
 } from "@/lib/data";
+import { inboundChannel, track } from "@/lib/track";
 import DateField from "./DateField";
 
 type Form = {
@@ -55,22 +59,33 @@ export default function ContactForm() {
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [serverError, setServerError] = useState("");
+  // 선택 항목은 접어 둔다. 처음 보이는 입력칸이 많을수록 시작 자체를 미룬다.
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   function set<K extends keyof Form>(key: K, value: Form[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  /**
+   * 필수는 이름·연락처·제작목적 셋뿐이다.
+   *
+   * 이메일은 연락처가 이미 있으므로 선택으로 내렸다. 다만 적어 넣었다면
+   * 오타로 답장을 못 보내는 일이 없도록 형식은 검사한다.
+   */
   function validate(): boolean {
     const e: Errors = {};
     if (form.name.trim().length < 2) e.name = "이름 또는 업체명을 입력해 주세요.";
     if (form.phone.replace(/\D/g, "").length < 9)
       e.phone = "연락 가능한 번호를 입력해 주세요.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
       e.email = "올바른 이메일 형식이 아닙니다.";
     if (form.purpose.trim().length < 2)
       e.purpose = "제작 목적을 간단히 적어 주세요.";
     if (!form.consent) e.consent = "개인정보 수집·이용에 동의해 주세요.";
     setErrors(e);
+    // 접어 둔 영역 안에 오류가 생기면 열어 준다 — 안 보이는 곳에서 막히면
+    // 왜 안 되는지 알 수 없다.
+    if (e.email) setDetailsOpen(true);
     return Object.keys(e).length === 0;
   }
 
@@ -93,9 +108,17 @@ export default function ContactForm() {
         const data = await res.json().catch(() => null);
         throw new Error(data?.message ?? "요청 처리에 실패했습니다.");
       }
+      // 서버가 접수까지 끝낸 시점에만 전환으로 센다. 제출 버튼 클릭을 전환으로
+      // 세면 실패한 시도까지 섞여 전환율이 부풀려진다.
+      track("inquiry_submitted", {
+        budget: form.budget || "미기재",
+        industry: form.industry || "미기재",
+        ...inboundChannel(),
+      });
       setStatus("success");
       setForm(empty);
     } catch (err) {
+      track("inquiry_failed", { ...inboundChannel() });
       setStatus("error");
       setServerError(
         err instanceof Error ? err.message : "잠시 후 다시 시도해 주세요.",
@@ -117,9 +140,26 @@ export default function ContactForm() {
           상담 신청이 접수되었습니다
         </h3>
         <p className="mx-auto mt-3 max-w-[46ch] text-[15px] leading-relaxed text-muted">
-          남겨주신 내용을 검토한 뒤 영업일 기준으로 빠르게 연락드리겠습니다.
-          급한 문의는 {brand.email} 으로 보내주셔도 됩니다.
+          담당자가 <span className="font-semibold text-ink">1영업일 안에</span> 직접
+          연락드립니다. 급한 문의는 {brand.email} 으로 보내주셔도 됩니다.
         </p>
+
+        {/* 접수 후 무엇이 이어지는지 한 번 더 보여 준다. 기다리는 동안
+            "연락이 오긴 오나" 하는 불안이 가장 흔한 이탈 사유다. */}
+        <ol className="mx-auto mt-8 grid max-w-[30rem] gap-3 text-left">
+          {inquiryNextSteps.map((s) => (
+            <li key={s.step} className="flex gap-3.5 rounded-2xl border border-line p-4">
+              <span className="font-mono text-[12px] font-bold text-accent">{s.step}</span>
+              <span>
+                <span className="block text-[15px] font-semibold text-ink">{s.title}</span>
+                <span className="mt-0.5 block text-[13px] leading-relaxed text-muted">
+                  {s.desc}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ol>
+
         <button
           onClick={() => setStatus("idle")}
           className="mt-8 rounded-full border border-line px-6 py-3 text-sm font-semibold text-ink transition-colors hover:border-ink/40"
@@ -136,6 +176,12 @@ export default function ContactForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="rounded-3xl border border-line bg-paper p-7 sm:p-9">
+      <p className="mb-6 rounded-2xl bg-mist px-4 py-3 text-[13.5px] leading-relaxed text-muted">
+        {inquiryAssurance}
+      </p>
+
+      {/* 필수는 셋뿐이다. 나머지는 아래 "자세히 알려주기" 안으로 접어 두어
+          첫인상에서 폼이 길어 보이지 않게 한다. */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Field label="이름 또는 업체명" error={errors.name} required>
           <input
@@ -154,7 +200,37 @@ export default function ContactForm() {
             placeholder="010 0000 0000"
           />
         </Field>
-        <Field label="이메일" error={errors.email} required>
+        <Field label="홈페이지 제작 목적" error={errors.purpose} required className="sm:col-span-2">
+          <input
+            className="field"
+            value={form.purpose}
+            onChange={(e) => set("purpose", e.target.value)}
+            placeholder="예: 상담 문의 늘리기, 회사 소개, 제품 판매"
+          />
+        </Field>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setDetailsOpen((v) => !v)}
+        aria-expanded={detailsOpen}
+        className="mt-5 inline-flex items-center gap-1.5 text-[14px] font-semibold text-muted transition-colors hover:text-ink"
+      >
+        {detailsOpen ? "간단히 보기" : "자세히 알려주기 (선택)"}
+        <CaretDown
+          size={14}
+          weight="bold"
+          className={`transition-transform duration-200 ${detailsOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+      <p className="mt-1.5 text-[13px] text-faint">
+        적어주시면 상담이 빨라집니다. 비워두셔도 접수됩니다.
+      </p>
+
+      <div
+        className={`grid grid-cols-1 gap-5 sm:grid-cols-2 ${detailsOpen ? "mt-6" : "hidden"}`}
+      >
+        <Field label="이메일" error={errors.email}>
           <input
             className="field"
             type="email"
@@ -169,14 +245,6 @@ export default function ContactForm() {
             value={form.industry}
             onChange={(e) => set("industry", e.target.value)}
             placeholder="예: 제조, 교육, 컨설팅"
-          />
-        </Field>
-        <Field label="홈페이지 제작 목적" error={errors.purpose} required className="sm:col-span-2">
-          <input
-            className="field"
-            value={form.purpose}
-            onChange={(e) => set("purpose", e.target.value)}
-            placeholder="예: 상담 문의 늘리기, 회사 소개, 제품 판매"
           />
         </Field>
         <Field label="필요한 페이지 또는 기능" className="sm:col-span-2">
@@ -235,8 +303,17 @@ export default function ContactForm() {
             className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
           />
           <span>
-            상담 진행을 위한 <span className="underline underline-offset-2">개인정보 수집·이용</span>
-            에 동의합니다. (이름, 연락처, 이메일 · 문의 응대 목적)
+            상담 진행을 위한{" "}
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="underline underline-offset-2 hover:text-accent"
+            >
+              개인정보 수집·이용
+            </a>
+            에 동의합니다. (이름, 연락처, 이메일 · 상담 응대 목적 · 문의 처리 후 3년 보관)
           </span>
         </label>
         {errors.consent && <p className="pl-7 text-[13px] text-accent">{errors.consent}</p>}
@@ -288,6 +365,7 @@ function ContactChannels() {
             value: brand.phone,
             href: `tel:${brand.phone.replace(/[^\d+]/g, "")}`,
             external: false,
+            event: "phone_click" as const,
           },
         ]
       : []),
@@ -298,6 +376,7 @@ function ContactChannels() {
       value: brand.email,
       href: `mailto:${brand.email}`,
       external: false,
+      event: "email_click" as const,
     },
     {
       key: "kakao",
@@ -306,6 +385,7 @@ function ContactChannels() {
       value: "1:1 채팅 상담",
       href: kakaoConsult.url,
       external: true,
+      event: "kakao_click" as const,
     },
   ];
 
@@ -324,6 +404,7 @@ function ContactChannels() {
             <a
               href={c.href}
               {...(c.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              onClick={() => track(c.event, { where: "contact", ...inboundChannel() })}
               className="group flex items-center gap-4 rounded-2xl border border-line px-5 py-4 outline-none transition-colors duration-200 hover:border-ink/40 focus-visible:ring-2 focus-visible:ring-accent/40"
             >
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-mist text-ink transition-colors duration-200 group-hover:bg-accent group-hover:text-paper">

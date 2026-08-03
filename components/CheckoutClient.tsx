@@ -13,6 +13,7 @@ import {
 } from "@phosphor-icons/react";
 import type { CouponDef, CouponKind, Plan } from "@/lib/data";
 import { formatKRW, formatWon, brand } from "@/lib/data";
+import { inboundChannel, track } from "@/lib/track";
 
 /**
  * 결제에 쓸 수 있는 쿠폰 — 서버가 세션과 이벤트 기간을 확인해 넘긴다.
@@ -114,6 +115,12 @@ export default function CheckoutClient({
     agree: false,
   });
   const [errors, setErrors] = useState<Errors>({});
+
+  // 결제 화면 진입을 전환 퍼널의 한 단계로 남긴다. 어느 플랜에서 이탈하는지
+  // 보려면 결제 완료만이 아니라 시작 지점도 있어야 한다.
+  useEffect(() => {
+    track("checkout_start", { plan: plan.id, price: plan.price, ...inboundChannel() });
+  }, [plan.id, plan.price]);
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
   const [receipt, setReceipt] = useState<{ impUid: string } | null>(null);

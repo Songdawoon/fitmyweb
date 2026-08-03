@@ -22,18 +22,27 @@ export default function Home() {
     <>
       <Nav authEnabled={authEnabled()} />
       <main>
+        {/* 섹션 순서는 고객의 결정 순서를 따른다.
+            문제 → 해결 → 증거 → 조건 → 행동.
+            후기(증거)를 플랜(해결) 앞에 두면 아직 무엇을 파는지 모르는
+            상태에서 남의 만족을 먼저 읽게 된다. */}
         <Hero />
         <AssuranceBand />
+        {/* 문제 */}
         <Problem />
+        {/* 해결 */}
         <FitSection />
-        <Testimonials />
         <CostReason />
         <Plans />
-        <Portfolio />
         <AddOns />
+        {/* 증거 */}
+        <Portfolio />
+        <Testimonials />
+        {/* 조건 */}
         <TrustPromise />
         <Process />
         <FAQ />
+        {/* 행동 */}
         <FinalCTA />
       </main>
       <Footer />

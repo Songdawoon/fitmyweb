@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { brand } from "@/lib/data";
+import { brand, hasRealPhone, legalLinks } from "@/lib/data";
 
 const cols = [
   {
@@ -65,13 +65,34 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="mt-14 flex flex-col gap-6 border-t border-line pt-6 text-[13px] text-faint md:flex-row md:items-end md:justify-between">
+        {/* 법정 고지 링크. 결제를 받는 사이트라 푸터 어디서든 닿아야 한다. */}
+        <nav className="mt-14 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-line pt-6">
+          {legalLinks.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className="text-[13.5px] font-medium text-muted transition-colors hover:text-ink"
+            >
+              {l.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="mt-6 flex flex-col gap-6 text-[13px] text-faint md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col gap-2">
             <p>
               {brand.name}은 {brand.operator}이 운영하는 커스텀 홈페이지 제작
               브랜드입니다.
             </p>
+            {/* 값이 비어 있는 항목은 아예 그리지 않는다 — 빈 칸이 보이면
+                정보가 누락된 것으로 읽혀 오히려 신뢰를 깎는다. */}
             <dl className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:gap-x-5">
+              {brand.ceo && (
+                <div className="flex gap-2">
+                  <dt>대표자</dt>
+                  <dd className="text-muted">{brand.ceo}</dd>
+                </div>
+              )}
               <div className="flex gap-2">
                 <dt>사업자번호</dt>
                 <dd className="text-muted">{brand.businessNumber}</dd>
@@ -79,6 +100,41 @@ export default function Footer() {
               <div className="flex gap-2">
                 <dt>통신판매업</dt>
                 <dd className="text-muted">{brand.mailOrderNumber}</dd>
+              </div>
+            </dl>
+            {brand.address && (
+              <p>
+                주소 · <span className="text-muted">{brand.address}</span>
+              </p>
+            )}
+            <dl className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:gap-x-5">
+              {hasRealPhone && (
+                <div className="flex gap-2">
+                  <dt>전화</dt>
+                  <dd>
+                    <a
+                      href={`tel:${brand.phone.replace(/[^\d+]/g, "")}`}
+                      className="text-muted transition-colors hover:text-ink"
+                    >
+                      {brand.phone}
+                    </a>
+                  </dd>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <dt>이메일</dt>
+                <dd>
+                  <a
+                    href={`mailto:${brand.email}`}
+                    className="text-muted transition-colors hover:text-ink"
+                  >
+                    {brand.email}
+                  </a>
+                </dd>
+              </div>
+              <div className="flex gap-2">
+                <dt>상담 시간</dt>
+                <dd className="text-muted">{brand.hours}</dd>
               </div>
             </dl>
           </div>

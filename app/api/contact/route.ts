@@ -50,10 +50,16 @@ export async function POST(req: Request) {
   };
   const consent = body.consent === true;
 
+  // 필수는 이름·연락처·제작목적·동의 넷. 이메일은 연락처가 이미 있으므로
+  // 선택으로 두되, 적어 넣었다면 형식은 맞아야 한다(오타로 답장이 반송되는 것을 막는다).
+  const emailMalformed =
+    inquiry.email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inquiry.email);
+
   if (
     inquiry.name.length < 2 ||
     !inquiry.phone ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inquiry.email) ||
+    (inquiry.purpose ?? "").length < 2 ||
+    emailMalformed ||
     !consent
   ) {
     return NextResponse.json(

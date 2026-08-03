@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { brand } from "@/lib/data";
+import { cabinetGrotesk, pretendard } from "@/lib/fonts";
 import AuthProvider from "@/components/AuthProvider";
 
 export const metadata: Metadata = {
@@ -41,20 +43,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ko">
-      <head>
-        <link
-          rel="stylesheet"
-          as="style"
-          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css"
-        />
-        <link
-          rel="stylesheet"
-          href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@800,700,500&display=swap"
-        />
-      </head>
+    <html
+      lang="ko"
+      className={`${pretendard.variable} ${cabinetGrotesk.variable}`}
+    >
       <body>
         <AuthProvider>{children}</AuthProvider>
+        {/* 전환 측정. 이벤트는 lib/track.ts 를 통해 채널별로 나눠 보낸다. */}
+        <Analytics />
       </body>
     </html>
   );

@@ -1,3 +1,4 @@
+import { inquiryNextSteps } from "@/lib/data";
 import ContactForm from "./ContactForm";
 import Reveal from "./Reveal";
 
@@ -19,6 +20,31 @@ export default function FinalCTA() {
                 괜찮습니다. 사업과 서비스, 예상 예산을 알려주시면 필요한 제작
                 범위와 적합한 방향을 안내해드립니다.
               </p>
+              {/* 보내기 전에 "보내면 무슨 일이 생기는지" 를 먼저 보여 준다.
+                  접수 완료 화면에만 두면 폼 앞에서 멈춘 사람은 영영 못 본다. */}
+              <div className="mt-8 border-t border-line pt-8">
+                <p className="text-[13px] font-semibold uppercase tracking-wide text-faint">
+                  신청하면 이렇게 진행됩니다
+                </p>
+                <ol className="mt-5 flex flex-col gap-4">
+                  {inquiryNextSteps.map((s) => (
+                    <li key={s.step} className="flex gap-3.5">
+                      <span className="mt-0.5 font-mono text-[12px] font-bold text-accent">
+                        {s.step}
+                      </span>
+                      <span>
+                        <span className="block text-[15px] font-semibold text-ink">
+                          {s.title}
+                        </span>
+                        <span className="mt-0.5 block text-[14px] leading-relaxed text-muted">
+                          {s.desc}
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
               <ul className="mt-8 flex flex-col gap-3 border-t border-line pt-8 text-[15px]">
                 {[
                   "제작 전 작업 범위와 비용을 먼저 안내",

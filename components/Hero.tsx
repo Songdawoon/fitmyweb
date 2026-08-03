@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight } from "@phosphor-icons/react";
-import { brand } from "@/lib/data";
+import { brand, heroAudience, heroDifferentiators } from "@/lib/data";
+import { inboundChannel, track } from "@/lib/track";
 import HeroStats from "./HeroStats";
 
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -24,7 +25,7 @@ export default function Hero() {
             transition={{ duration: 0.5, ease }}
             className="eyebrow"
           >
-            합리적인 커스텀 홈페이지 제작
+            {heroAudience}
           </motion.p>
 
           <h1 className="mt-6 h-display text-[9vw] leading-[1.18] sm:text-5xl lg:text-[3.9rem]">
@@ -59,6 +60,25 @@ export default function Hero() {
             <span className="text-ink">{brand.subMessage}</span>
           </motion.p>
 
+          {/* 차별점 — CTA 위에 둔다. 무엇이 다른지 모르는 채로 버튼을 만나면
+              누를 이유가 없다. 첫 화면 안에 들어가도록 세 줄로 제한했다. */}
+          <motion.ul
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease, delay: 0.4 }}
+            className="mt-7 flex flex-col gap-2.5 border-l-2 border-accent/30 pl-4"
+          >
+            {heroDifferentiators.map((d) => (
+              <li key={d.label} className="text-[15px] leading-snug">
+                <span className="font-semibold text-ink">{d.label}</span>
+                {/* 설명은 모바일에서 감춘다. 세 줄이 각각 두세 줄로 접히면
+                    CTA 가 첫 화면 밖으로 밀려난다 — 라벨만으로도 차별점은
+                    전달되고, 근거는 아래 섹션에서 다시 나온다. */}
+                <span className="hidden text-muted sm:inline"> — {d.detail}</span>
+              </li>
+            ))}
+          </motion.ul>
+
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
@@ -67,6 +87,7 @@ export default function Hero() {
           >
             <Link
               href="/#contact"
+              onClick={() => track("cta_click", { where: "hero", ...inboundChannel() })}
               className="group inline-flex items-center justify-center gap-2 rounded-full bg-accent px-7 py-3.5 text-[15px] font-semibold text-paper transition-all duration-200 hover:bg-accent-ink active:scale-[0.98]"
             >
               내 사업에 맞는 구성 제안받기
