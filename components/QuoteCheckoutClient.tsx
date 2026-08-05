@@ -22,7 +22,6 @@ type Props = {
   items: QuoteLine[];
   total: number;
   status: string;
-  paidImpUid: string | null;
   impCode: string;
   channelKey: string;
   pg: string;
@@ -50,7 +49,6 @@ export default function QuoteCheckoutClient({
   items,
   total,
   status: quoteStatus,
-  paidImpUid,
   impCode,
   channelKey,
   pg,
@@ -71,7 +69,6 @@ export default function QuoteCheckoutClient({
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
   const [serverAmount, setServerAmount] = useState<number | null>(null);
-  const [receipt, setReceipt] = useState<{ impUid: string } | null>(null);
 
   const configured = Boolean(
     impCode && !impCode.includes("00000000") && (channelKey || pg),
@@ -97,8 +94,6 @@ export default function QuoteCheckoutClient({
         setMessage(data?.message ?? "결제 검증에 실패했습니다. 담당자에게 문의해 주세요.");
         return;
       }
-
-      setReceipt({ impUid });
 
       if (data.status === "pending") {
         setStatus("pending");
@@ -229,11 +224,8 @@ export default function QuoteCheckoutClient({
               <p className="mt-4 text-[15px] text-muted">
                 {title} · {formatKRW(total)}
               </p>
-              {paidImpUid && (
-                <p className="mt-2 font-mono text-[12px] text-faint">결제번호 {paidImpUid}</p>
-              )}
               <p className="mt-6 text-[14px] text-muted">
-                영수증과 진행 안내는 담당자가 메일로 보내드립니다.
+                진행 안내는 담당자가 따로 연락드립니다.
               </p>
             </>
           ) : (
@@ -247,7 +239,8 @@ export default function QuoteCheckoutClient({
   }
 
   return (
-    <section className="container-page section-x pb-32 pt-10">
+    // Nav 가 fixed 라 상단 여백이 없으면 제목이 로고에 겹친다(다른 페이지와 같은 py-32).
+    <section className="container-page section-x py-32">
       <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
         주문제작 견적 · {ref_}
       </p>
@@ -268,14 +261,7 @@ export default function QuoteCheckoutClient({
               <h2 className="font-display text-2xl font-extrabold tracking-tight text-ink">
                 결제가 완료되었습니다
               </h2>
-              <p className="mt-3 text-[15px] text-muted">
-                담당자가 곧 연락드립니다. 확인 메일도 함께 보내드렸습니다.
-              </p>
-              {receipt && (
-                <p className="mt-4 font-mono text-[12px] text-faint">
-                  결제번호 {receipt.impUid}
-                </p>
-              )}
+              <p className="mt-3 text-[15px] text-muted">담당자가 곧 연락드립니다.</p>
             </div>
           ) : (
             <>

@@ -45,7 +45,6 @@ export default async function QuotePage({ params }: { params: { token: string } 
           items={quote.items}
           total={quote.total}
           status={quote.status}
-          paidImpUid={quote.paidImpUid}
           impCode={process.env.NEXT_PUBLIC_PORTONE_IMP_CODE ?? ""}
           channelKey={process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY ?? ""}
           pg={process.env.NEXT_PUBLIC_PORTONE_PG ?? ""}
