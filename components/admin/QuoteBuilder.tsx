@@ -209,20 +209,29 @@ export default function QuoteBuilder({ quote }: { quote: BuilderQuote | null }) 
           <h2 className="font-display text-xl font-extrabold tracking-tight text-ink">
             기본 제작비
           </h2>
+          {/*
+            너비는 감싼 div 가 잡는다. .field 에 w-full 이 들어 있어서 input 에
+            w-44 를 직접 걸면 유틸리티 순서에 따라 무시된다(항목 이름 칸이
+            사라졌던 원인).
+          */}
           <div className="mt-4 flex gap-3">
-            <input
-              className="field flex-1"
-              value={baseLabel}
-              onChange={(e) => setBaseLabel(e.target.value)}
-              disabled={readOnly}
-            />
-            <input
-              className="field w-44 text-right"
-              inputMode="numeric"
-              value={baseAmount.toLocaleString("ko-KR")}
-              onChange={(e) => setBaseAmount(toAmount(e.target.value))}
-              disabled={readOnly}
-            />
+            <div className="min-w-0 flex-1">
+              <input
+                className="field"
+                value={baseLabel}
+                onChange={(e) => setBaseLabel(e.target.value)}
+                disabled={readOnly}
+              />
+            </div>
+            <div className="w-44 shrink-0">
+              <input
+                className="field text-right"
+                inputMode="numeric"
+                value={baseAmount.toLocaleString("ko-KR")}
+                onChange={(e) => setBaseAmount(toAmount(e.target.value))}
+                disabled={readOnly}
+              />
+            </div>
           </div>
         </section>
 
@@ -276,20 +285,24 @@ export default function QuoteBuilder({ quote }: { quote: BuilderQuote | null }) 
             {items.map((item, index) =>
               item.presetId ? null : (
                 <div key={index} className="flex gap-2">
-                  <input
-                    className="field flex-1"
-                    placeholder="항목 이름"
-                    value={item.label}
-                    onChange={(e) => patchItem(index, { label: e.target.value })}
-                    disabled={readOnly}
-                  />
-                  <input
-                    className="field w-40 text-right"
-                    inputMode="numeric"
-                    value={item.amount.toLocaleString("ko-KR")}
-                    onChange={(e) => patchItem(index, { amount: toAmount(e.target.value) })}
-                    disabled={readOnly}
-                  />
+                  <div className="min-w-0 flex-1">
+                    <input
+                      className="field"
+                      placeholder="항목 이름"
+                      value={item.label}
+                      onChange={(e) => patchItem(index, { label: e.target.value })}
+                      disabled={readOnly}
+                    />
+                  </div>
+                  <div className="w-40 shrink-0">
+                    <input
+                      className="field text-right"
+                      inputMode="numeric"
+                      value={item.amount.toLocaleString("ko-KR")}
+                      onChange={(e) => patchItem(index, { amount: toAmount(e.target.value) })}
+                      disabled={readOnly}
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={() => removeItem(index)}

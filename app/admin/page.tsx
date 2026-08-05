@@ -4,8 +4,9 @@ import { redirect } from "next/navigation";
 
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import PaymentAlert from "@/components/admin/PaymentAlert";
 import { auth, authEnabled } from "@/lib/auth";
-import { getAdminData } from "@/lib/account";
+import { getAdminData, getUnseenOrders } from "@/lib/account";
 import { formatWon } from "@/lib/data";
 
 export const metadata: Metadata = {
@@ -31,7 +32,7 @@ export default async function AdminPage() {
   // 허용 목록(ADMIN_EMAILS)에 없는 계정은 존재 자체를 알리지 않는다.
   if (!session.user.isAdmin) redirect("/mypage");
 
-  const data = await getAdminData();
+  const [data, unseen] = await Promise.all([getAdminData(), getUnseenOrders()]);
 
   return (
     <>
@@ -51,6 +52,8 @@ export default async function AdminPage() {
             주문제작 견적
           </Link>
         </div>
+
+        <PaymentAlert initial={unseen} />
 
         {!data ? (
           <p className="mt-12 rounded-2xl border border-line px-5 py-8 text-[14px] text-muted">
@@ -123,11 +126,18 @@ export default async function AdminPage() {
                   </thead>
                   <tbody className="divide-y divide-line">
                     {data.orders.map((o) => (
-                      <tr key={o.id}>
+                      <tr key={o.id} className={o.seenAt ? undefined : "bg-accent/5"}>
                         <td className="whitespace-nowrap px-4 py-3 text-faint">
                           {formatDateTime(o.createdAt)}
                         </td>
-                        <td className="px-4 py-3 font-semibold text-ink">{o.planName}</td>
+                        <td className="px-4 py-3 font-semibold text-ink">
+                          {!o.seenAt && (
+                            <span className="mr-2 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-paper">
+                              New
+                            </span>
+                          )}
+                          {o.planName}
+                        </td>
                         <td className="whitespace-nowrap px-4 py-3 text-ink">
                           {formatWon(o.amount)}
                         </td>

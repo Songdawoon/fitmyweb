@@ -174,6 +174,14 @@ export const orders = pgTable(
     customerName: text("customer_name"),
     customerEmail: text("customer_email"),
     customerPhone: text("customer_phone"),
+    /**
+     * 관리자가 결제 알림을 확인한 시각. null 이면 아직 못 본 결제다.
+     *
+     * 결제 확인 메일은 이미 나가지만 메일함은 놓치기 쉽고, 놓친 결제는
+     * 그대로 방치된 주문이 된다. 관리자 화면이 "안 본 것" 을 알려면
+     * 봤다는 사실을 어딘가 적어 두어야 한다.
+     */
+    seenAt: timestamp("seen_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({

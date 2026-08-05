@@ -375,3 +375,72 @@ export async function getAdminData(limit = 100) {
 
   return { inquiries: recentInquiries, orders: recentOrders };
 }
+
+// ── 결제 알림 ─────────────────────────────────────────────────────
+// 결제 확인 메일은 이미 나가지만 메일함은 놓치기 쉽다. 관리자 화면이
+// "아직 안 본 결제" 를 직접 알려 주어, 놓친 주문이 방치되지 않게 한다.
+
+export type UnseenOrders = {
+  count: number;
+  /** 미확인 결제 금액 합계. */
+  total: number;
+  /** 가장 최근 미확인 결제 — 배너에 한 줄로 보여 준다. */
+  latest: {
+    planName: string;
+    amount: number;
+    customerName: string | null;
+    createdAt: string;
+  } | null;
+};
+
+export async function getUnseenOrders(): Promise<UnseenOrders> {
+  const empty: UnseenOrders = { count: 0, total: 0, latest: null };
+
+  const db = getDb();
+  if (!db) return empty;
+
+  try {
+    const rows = await db
+      .select()
+      .from(orders)
+      .where(isNull(orders.seenAt))
+      .orderBy(desc(orders.createdAt))
+      .limit(100);
+
+    if (rows.length === 0) return empty;
+
+    const first = rows[0];
+    return {
+      count: rows.length,
+      total: rows.reduce((sum, o) => sum + o.amount, 0),
+      latest: {
+        planName: first.planName,
+        amount: first.amount,
+        customerName: first.customerName,
+        createdAt: first.createdAt.toISOString(),
+      },
+    };
+  } catch (e) {
+    // 알림을 못 읽는다고 관리자 페이지 전체가 죽으면 안 된다.
+    console.error("[admin] 미확인 결제 조회 실패:", e);
+    return empty;
+  }
+}
+
+/** 결제 알림을 모두 확인 처리한다. 확인은 되돌리지 않는다. */
+export async function markOrdersSeen(): Promise<number> {
+  const db = getDb();
+  if (!db) return 0;
+
+  try {
+    const updated = await db
+      .update(orders)
+      .set({ seenAt: sql`now()` })
+      .where(isNull(orders.seenAt))
+      .returning({ id: orders.id });
+    return updated.length;
+  } catch (e) {
+    console.error("[admin] 결제 확인 처리 실패:", e);
+    return 0;
+  }
+}
