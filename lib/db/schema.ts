@@ -1,8 +1,10 @@
+import { sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
   index,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -67,6 +69,91 @@ export const coupons = pgTable(
 );
 
 /**
+ * 견적 항목 한 줄.
+ *
+ * 프리셋에서 골랐어도 라벨과 금액을 통째로 복사해 둔다 — 견적은 "그때 합의한
+ * 내용"이므로, lib/data.ts 의 프리셋 가격을 나중에 고쳐도 이미 보낸 견적의
+ * 금액이 따라 움직이면 안 된다. presetId 는 관리자 화면에서 체크 상태를
+ * 되살리기 위한 표식일 뿐이고, 금액의 근거가 아니다.
+ */
+export type QuoteItem = {
+  /** 프리셋에서 온 항목이면 프리셋 id, 자유입력이면 null */
+  presetId: string | null;
+  label: string;
+  /** 원 단위 정수. 음수(할인 줄)도 허용하되 총액은 양수여야 한다. */
+  amount: number;
+};
+
+/**
+ * 주문제작 견적.
+ *
+ * 관리자가 협의한 금액으로 만들고, token 이 박힌 링크를 고객에게 보낸다.
+ * 링크에는 만료가 없고, 결제가 끝나면 status 가 paid 로 넘어가 종료된다.
+ *
+ * 금액의 단일 진실 공급원은 total 이다. 결제창에는 브라우저가 금액을 넣지만
+ * 서버는 언제나 이 컬럼을 다시 읽어 대조한다(lib/portone.ts 의 resolveBillable).
+ * items 와 total 이 어긋나지 않도록 total 은 저장할 때마다 서버가
+ * computeQuoteTotal 로 다시 계산한다 — 클라이언트가 보낸 총액은 쓰지 않는다.
+ */
+export const quotes = pgTable(
+  "quotes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /**
+     * 사람이 부를 수 있는 짧은 식별자. merchant_uid 에 실려 나가므로 비밀이
+     * 아니다. custom_data 가 유실돼도 주문번호만으로 견적을 되찾기 위한
+     * 보조 경로다(planIdFromMerchantUid 와 같은 역할).
+     */
+    ref: text("ref").notNull(),
+    /** 결제 링크의 비밀 열쇠. 32자 base64url(192비트) — 추측 불가. */
+    token: text("token").notNull(),
+
+    title: text("title").notNull(),
+    /** 고객 화면과 메일에 함께 보여줄 안내 한 단락. */
+    note: text("note"),
+
+    customerName: text("customer_name"),
+    customerEmail: text("customer_email"),
+    customerPhone: text("customer_phone"),
+    /** 링크를 열어 본 로그인 계정. 최초 열람 때 한 번만 채운다. */
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+
+    baseLabel: text("base_label").notNull().default("기본 제작비"),
+    baseAmount: bigint("base_amount", { mode: "number" }).notNull(),
+    items: jsonb("items").$type<QuoteItem[]>().notNull().default(sql`'[]'::jsonb`),
+    /** baseAmount + items 합계. 서버 계산값만 들어간다. */
+    total: bigint("total", { mode: "number" }).notNull(),
+
+    /** open(결제 가능) | paid(결제 완료·종료) | closed(관리자 수동 종료) */
+    status: text("status").notNull().default("open"),
+    /**
+     * 쿠폰 적용 스위치. 지금은 항상 false 다(관리자가 이미 협의한 금액이므로).
+     * 켜면 verifyPayment 가 고정 플랜과 똑같은 쿠폰 경로를 그대로 탄다.
+     */
+    couponsEnabled: boolean("coupons_enabled").notNull().default(false),
+
+    /** 결제 직전 서버가 발급한 주문번호. 웹훅 역추적과 대사(對査)용. */
+    lastMerchantUid: text("last_merchant_uid"),
+    paidImpUid: text("paid_imp_uid"),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    sentCount: integer("sent_count").notNull().default(0),
+
+    createdByEmail: text("created_by_email"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    tokenIdx: uniqueIndex("quotes_token_idx").on(t.token),
+    refIdx: uniqueIndex("quotes_ref_idx").on(t.ref),
+    statusIdx: index("quotes_status_idx").on(t.status),
+    emailIdx: index("quotes_email_idx").on(t.customerEmail),
+  }),
+);
+
+/**
  * 결제 주문. 포트원에서 검증된 건만 기록한다.
  * 브라우저 콜백과 웹훅이 같은 결제를 두 번 보고할 수 있어 impUid 가 유니크다.
  */
@@ -80,6 +167,8 @@ export const orders = pgTable(
     merchantUid: text("merchant_uid").notNull(),
     planId: text("plan_id").notNull(),
     planName: text("plan_name").notNull(),
+    // 주문제작 견적 결제면 그 견적 행. 고정 플랜 결제는 null.
+    quoteId: uuid("quote_id").references(() => quotes.id, { onDelete: "set null" }),
     amount: bigint("amount", { mode: "number" }).notNull(),
     source: text("source").notNull(), // "client" | "webhook"
     customerName: text("customer_name"),
@@ -91,6 +180,15 @@ export const orders = pgTable(
     impUidIdx: uniqueIndex("orders_imp_uid_idx").on(t.impUid),
     userIdx: index("orders_user_idx").on(t.userId),
     emailIdx: index("orders_email_idx").on(t.customerEmail),
+    /**
+     * 견적 하나에 주문은 하나. 두 탭에서 결제창을 동시에 띄워 둘 다 승인되는
+     * 경우, 두 번째 주문 행은 여기서 막힌다(recordOrderRow 의
+     * onConflictDoNothing 이 조용히 흡수하고, markQuotePaid 가 충돌을
+     * 에러 로그로 남긴다).
+     */
+    quoteIdx: uniqueIndex("orders_quote_idx")
+      .on(t.quoteId)
+      .where(sql`${t.quoteId} is not null`),
   }),
 );
 
@@ -125,5 +223,6 @@ export const inquiries = pgTable(
 
 export type UserRow = typeof users.$inferSelect;
 export type CouponRow = typeof coupons.$inferSelect;
+export type QuoteRow = typeof quotes.$inferSelect;
 export type OrderRow = typeof orders.$inferSelect;
 export type InquiryRow = typeof inquiries.$inferSelect;

@@ -99,3 +99,22 @@ export const authOptions: NextAuthOptions = {
 export function auth() {
   return getServerSession(authOptions);
 }
+
+/**
+ * 관리자 전용 API 라우트의 가드.
+ *
+ * 로그인하지 않았으면 401, 로그인했지만 관리자가 아니면 **404** 를 준다.
+ * /admin 이 허용 목록 밖 계정에게 존재 자체를 알리지 않는 것과 같은 방침이라,
+ * 403 으로 "여기 뭔가 있다" 를 알려 주지 않는다.
+ *
+ * NextResponse 를 만들지 않고 상태 코드만 돌려주는 이유는, 이 파일이
+ * 서버 컴포넌트에서도 import 되기 때문이다 — next/server 를 끌고 들어오지 않는다.
+ */
+export async function requireAdmin(): Promise<
+  { ok: true; email: string | null } | { ok: false; status: 401 | 404 }
+> {
+  const session = await auth();
+  if (!session) return { ok: false, status: 401 };
+  if (!session.user.isAdmin) return { ok: false, status: 404 };
+  return { ok: true, email: session.user.email ?? null };
+}

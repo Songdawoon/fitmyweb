@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     source: "client",
     impUid: result.impUid,
     merchantUid: result.merchantUid,
-    plan: result.plan,
+    billable: result.billable,
     amount: result.amount,
     meta: result.meta,
     couponIds: result.couponIds,
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     verified: true,
     impUid: result.impUid,
     merchantUid: result.merchantUid,
-    planId: result.plan.id,
+    planId: result.billable.planId,
     amount: result.amount,
   });
 }

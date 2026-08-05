@@ -143,7 +143,15 @@ export default async function MyPage() {
                       className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-4"
                     >
                       <div>
-                        <p className="text-[15px] font-semibold text-ink">{o.planName}</p>
+                        <p className="text-[15px] font-semibold text-ink">
+                          {o.planName}
+                          {/* 견적 결제는 플랜명이 견적 제목이라, 무엇인지 밝혀 준다. */}
+                          {o.planId === "quote" && (
+                            <span className="ml-2 rounded-full bg-mist px-2 py-0.5 text-[11px] font-medium text-muted">
+                              주문제작
+                            </span>
+                          )}
+                        </p>
                         <p className="mt-0.5 font-mono text-[12px] text-faint">
                           {o.merchantUid}
                         </p>

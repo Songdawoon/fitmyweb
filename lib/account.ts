@@ -331,6 +331,8 @@ export async function recordOrderRow(input: {
   merchantUid: string;
   planId: string;
   planName: string;
+  /** 주문제작 견적 결제면 그 견적 id. 고정 플랜은 null. */
+  quoteId?: string | null;
   amount: number;
   source: "client" | "webhook";
   customerName?: string | null;
@@ -351,7 +353,10 @@ export async function recordOrderRow(input: {
       userId = found?.id ?? null;
     }
 
-    await db.insert(orders).values({ ...input, userId }).onConflictDoNothing();
+    await db
+      .insert(orders)
+      .values({ ...input, quoteId: input.quoteId ?? null, userId })
+      .onConflictDoNothing();
   } catch (e) {
     // 결제는 이미 끝난 건이라 응답을 뒤집지 않는다 — 로그로만 남긴다.
     console.error("[payment] 주문 저장 실패 — 수동 확인 필요:", e, input.impUid);

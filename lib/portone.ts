@@ -1,8 +1,10 @@
 import "server-only";
 
-import { getPlan, type Plan } from "@/lib/data";
+import { getPlan } from "@/lib/data";
 import { sendOrderMail, isEmailConfigured } from "@/lib/email";
 import { recordOrderRow, resolveCoupons, markCouponUsed } from "@/lib/account";
+import { getQuoteById, getQuoteByRef, markQuotePaid } from "@/lib/quotes";
+import type { QuoteItem } from "@/lib/db";
 
 /**
  * PortOne V1(구 아임포트) 서버 연동 유틸.
@@ -106,13 +108,70 @@ export function planIdFromMerchantUid(merchantUid: unknown): string | undefined 
   return /^pay-([a-z0-9]+)-/i.exec(merchantUid)?.[1];
 }
 
+// ── 주문제작 견적 ─────────────────────────────────────────────────
+
+/** 견적 결제의 custom_data. 고정 플랜의 planId 대신 quoteId 를 싣는다. */
+export type QuoteMeta = {
+  quoteId: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+};
+
+export function parseQuoteCustomData(raw: unknown): QuoteMeta | null {
+  if (typeof raw !== "string" || !raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<QuoteMeta>;
+    if (typeof parsed?.quoteId !== "string" || !parsed.quoteId) return null;
+
+    return {
+      quoteId: parsed.quoteId,
+      name: typeof parsed.name === "string" ? parsed.name : undefined,
+      email: typeof parsed.email === "string" ? parsed.email : undefined,
+      phone: typeof parsed.phone === "string" ? parsed.phone : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 견적 주문번호는 `qt-{REF}-{시각}-{난수}` 형태입니다(lib/quotes.ts).
+ * ref 는 대문자+숫자뿐이라 고정 플랜의 `pay-{planId}-` 와 섞이지 않습니다.
+ */
+export function quoteRefFromMerchantUid(merchantUid: unknown): string | undefined {
+  if (typeof merchantUid !== "string") return undefined;
+  return /^qt-([A-Z0-9]+)-/.exec(merchantUid)?.[1];
+}
+
+/**
+ * 결제 대상 — 고정 플랜과 주문제작 견적을 한 형태로 눕힌 것.
+ *
+ * verifyPayment 아래의 모든 코드(금액 대조·주문 기록·메일)는 이 타입만 보고,
+ * 결제가 어느 쪽에서 왔는지 신경 쓰지 않습니다. 분기는 resolveBillable
+ * 한 곳에만 있습니다 — 두 갈래를 여러 곳에서 알게 하면 한쪽만 고쳐집니다.
+ */
+export type Billable = {
+  /** orders.plan_id 에 그대로 들어간다. 견적은 항상 "quote". */
+  planId: string;
+  planName: string;
+  /** 서버가 정한 정가. 클라이언트가 보낸 금액은 절대 여기 오지 않는다. */
+  price: number;
+  /** 쿠폰을 적용할 수 있는지. 견적은 quotes.couponsEnabled 를 따른다. */
+  couponable: boolean;
+  quoteId: string | null;
+  quoteRef: string | null;
+  /** 견적 결제의 항목 내역 — 주문 확인 메일에 싣는다. */
+  quoteItems: QuoteItem[];
+};
+
 export type VerifyOutcome =
   | {
       status: "paid";
       verified: true;
       impUid: string;
       merchantUid: string;
-      plan: Plan;
+      billable: Billable;
       amount: number;
       meta: OrderMeta | null;
       /** 이 결제에 실제로 적용된 계정 쿠폰 id — 확정 시 사용 처리한다. */
@@ -133,6 +192,112 @@ export type VerifyOutcome =
       message: string;
       httpStatus: number;
     };
+
+type BillableResolution =
+  | { ok: true; billable: Billable; meta: OrderMeta | null }
+  | { ok: false; message: string; httpStatus: number };
+
+/**
+ * 결제 건에서 "무엇을 얼마에 파는 건이었나" 를 서버 기준으로 복원합니다.
+ *
+ * 견적 경로의 금액은 quotes.total 에서만 읽습니다. 브라우저가 결제창에 넣은
+ * amount 는 여기에 관여하지 않으므로, 금액을 깎아 보내도 아래 대조에서 걸립니다.
+ */
+async function resolveBillable(
+  impUid: string,
+  rawCustomData: unknown,
+  merchantUid: string,
+): Promise<BillableResolution> {
+  const quoteMeta = parseQuoteCustomData(rawCustomData);
+  const ref = quoteRefFromMerchantUid(merchantUid);
+
+  // ── 주문제작 견적 ──────────────────────────────────────────────
+  if (quoteMeta || ref) {
+    const quote = quoteMeta
+      ? await getQuoteById(quoteMeta.quoteId)
+      : await getQuoteByRef(ref!);
+
+    // DB 미연결도 여기로 온다(조회가 null). 견적 결제는 DB 없이 성립할 수
+    // 없으므로 통과시키지 않는다.
+    if (!quote) {
+      console.error("[payment] 견적을 찾지 못함:", { impUid, merchantUid });
+      return { ok: false, message: "견적 정보를 확인할 수 없습니다.", httpStatus: 400 };
+    }
+
+    // 주문번호의 ref 와 custom_data 가 가리키는 견적이 어긋나면 조작으로 본다
+    // — 싼 견적 id 를 custom_data 에 실어 비싼 결제를 통과시키려는 시도.
+    if (ref && quote.ref !== ref) {
+      console.error("[payment] 견적 식별자 불일치:", { impUid, ref, quoteId: quote.id });
+      return { ok: false, message: "견적 정보를 확인할 수 없습니다.", httpStatus: 400 };
+    }
+
+    if (quote.status === "closed") {
+      return {
+        ok: false,
+        message: "종료된 견적입니다. 담당자에게 문의해 주세요.",
+        httpStatus: 409,
+      };
+    }
+
+    // 완료 라우트와 웹훅이 같은 결제를 두 번 보고하므로 같은 imp_uid 의
+    // 재보고는 통과시킨다. 다른 결제 건이면 중복 결제이므로 막고 크게 남긴다.
+    if (quote.status === "paid" && quote.paidImpUid !== impUid) {
+      console.error("[payment] 결제 완료된 견적에 중복 결제 — 환불 확인 필요:", {
+        impUid,
+        quoteId: quote.id,
+        ref: quote.ref,
+        paidImpUid: quote.paidImpUid,
+      });
+      return { ok: false, message: "이미 결제가 완료된 견적입니다.", httpStatus: 409 };
+    }
+
+    return {
+      ok: true,
+      billable: {
+        planId: "quote",
+        planName: quote.title,
+        price: quote.total, // 금액의 단일 진실 공급원
+        couponable: quote.couponsEnabled,
+        quoteId: quote.id,
+        quoteRef: quote.ref,
+        quoteItems: quote.items,
+      },
+      // 결제자 정보는 결제창 입력을 우선하고, 없으면 견적에 적힌 값으로 채운다.
+      meta: {
+        planId: "quote",
+        name: quoteMeta?.name ?? quote.customerName ?? undefined,
+        email: quoteMeta?.email ?? quote.customerEmail ?? undefined,
+        phone: quoteMeta?.phone ?? quote.customerPhone ?? undefined,
+      },
+    };
+  }
+
+  // ── 고정 플랜 ─────────────────────────────────────────────────
+  const meta = parseCustomData(rawCustomData);
+  const plan = getPlan(meta?.planId ?? planIdFromMerchantUid(merchantUid));
+
+  if (!plan || !plan.payable) {
+    return {
+      ok: false,
+      message: "주문한 플랜 정보를 확인할 수 없습니다.",
+      httpStatus: 400,
+    };
+  }
+
+  return {
+    ok: true,
+    billable: {
+      planId: plan.id,
+      planName: plan.name,
+      price: plan.price,
+      couponable: true,
+      quoteId: null,
+      quoteRef: null,
+      quoteItems: [],
+    },
+    meta,
+  };
+}
 
 /**
  * 포트원에서 결제 건을 조회하고 금액·상태를 검증합니다.
@@ -194,19 +359,19 @@ export async function verifyPayment(impUid: string): Promise<VerifyOutcome> {
   }
 
   const merchantUid = String(payment.merchant_uid ?? "");
-  const meta = parseCustomData(payment.custom_data);
-  const plan = getPlan(meta?.planId ?? planIdFromMerchantUid(merchantUid));
 
-  if (!plan || !plan.payable) {
+  const resolved = await resolveBillable(impUid, payment.custom_data, merchantUid);
+  if (!resolved.ok) {
     return {
       status: "failed",
       verified: false,
       impUid,
-      message: "주문한 플랜 정보를 확인할 수 없습니다.",
-      httpStatus: 400,
+      message: resolved.message,
+      httpStatus: resolved.httpStatus,
     };
   }
 
+  const { billable, meta } = resolved;
   const paidAmount = Number(payment.amount);
   const paymentStatus = String(payment.status ?? "");
 
@@ -214,13 +379,16 @@ export async function verifyPayment(impUid: string): Promise<VerifyOutcome> {
    * 쿠폰 할인 — 금액은 클라이언트가 보낸 값을 쓰지 않고, 코드를 서버에서 다시
    * 확인해 정해진 금액만 인정한다(resolveCoupons). 그래서 결제창에 임의의
    * 금액을 넣어 보내도 아래 대조에서 걸린다.
+   *
+   * 견적은 couponable 이 false 라, 코드가 실려 와도 할인 0 으로 계산된다
+   * — 관리자가 이미 협의한 금액에 쿠폰을 겹쳐 받을 수는 없다.
    */
   let couponIds: string[] = [];
   let discount = 0;
 
-  if (meta?.couponCodes?.length) {
-    const resolved = await resolveCoupons(meta.couponCodes);
-    if (!resolved) {
+  if (billable.couponable && meta?.couponCodes?.length) {
+    const resolvedCoupons = await resolveCoupons(meta.couponCodes);
+    if (!resolvedCoupons) {
       console.error("[payment] 쿠폰 무효:", { impUid, codes: meta.couponCodes });
       return {
         status: "failed",
@@ -230,21 +398,26 @@ export async function verifyPayment(impUid: string): Promise<VerifyOutcome> {
         httpStatus: 400,
       };
     }
-    couponIds = resolved
+    couponIds = resolvedCoupons
       .map((c) => c.couponId)
       .filter((id): id is string => Boolean(id));
-    // 두 쿠폰을 합쳐도 플랜 금액을 넘길 수는 없다(결제 금액이 음수가 되므로).
+    // 두 쿠폰을 합쳐도 주문 금액을 넘길 수는 없다(결제 금액이 음수가 되므로).
     discount = Math.min(
-      resolved.reduce((sum, c) => sum + c.amount, 0),
-      plan.price,
+      resolvedCoupons.reduce((sum, c) => sum + c.amount, 0),
+      billable.price,
     );
   }
 
-  const expectedAmount = plan.price - discount;
+  const expectedAmount = billable.price - discount;
 
   // 금액 대조 — 조작된 amount 를 잡아내는 핵심 방어선.
   if (paidAmount !== expectedAmount) {
-    console.error("[payment] 금액 불일치:", { impUid, paidAmount, expected: expectedAmount });
+    console.error("[payment] 금액 불일치:", {
+      impUid,
+      paidAmount,
+      expected: expectedAmount,
+      quote: billable.quoteRef,
+    });
     return {
       status: "failed",
       verified: false,
@@ -261,7 +434,7 @@ export async function verifyPayment(impUid: string): Promise<VerifyOutcome> {
         verified: true,
         impUid,
         merchantUid,
-        plan,
+        billable,
         amount: paidAmount,
         meta,
         couponIds,
@@ -313,7 +486,7 @@ export async function recordOrder(input: {
   source: "client" | "webhook";
   impUid: string;
   merchantUid: string;
-  plan: Plan;
+  billable: Billable;
   amount: number;
   meta: OrderMeta | null;
   couponIds?: string[];
@@ -322,7 +495,8 @@ export async function recordOrder(input: {
     source: input.source,
     impUid: input.impUid,
     merchantUid: input.merchantUid,
-    plan: input.plan.id,
+    plan: input.billable.planId,
+    quote: input.billable.quoteRef,
     amount: input.amount,
     coupons: input.meta?.couponCodes ?? null,
     customer: input.meta
@@ -337,8 +511,9 @@ export async function recordOrder(input: {
   await recordOrderRow({
     impUid: input.impUid,
     merchantUid: input.merchantUid,
-    planId: input.plan.id,
-    planName: input.plan.name,
+    planId: input.billable.planId,
+    planName: input.billable.planName,
+    quoteId: input.billable.quoteId,
     amount: input.amount,
     source: input.source,
     customerName: input.meta?.name ?? null,
@@ -346,13 +521,30 @@ export async function recordOrder(input: {
     customerPhone: input.meta?.phone ?? null,
   });
 
+  /**
+   * 견적 종료. markQuotePaid 는 status='open' 일 때만 이기므로 완료 라우트와
+   * 웹훅이 두 번 불러도 안전하다. 진 쪽이 다른 imp_uid 였다면 그건 같은
+   * 견적에 결제가 두 번 들어온 것이므로 환불 확인이 필요하다.
+   */
+  if (input.billable.quoteId) {
+    const closed = await markQuotePaid(input.billable.quoteId, input.impUid);
+    if (!closed.won && closed.paidImpUid && closed.paidImpUid !== input.impUid) {
+      console.error("[payment] 견적 중복 결제 — 환불 확인 필요:", {
+        quoteId: input.billable.quoteId,
+        ref: input.billable.quoteRef,
+        first: closed.paidImpUid,
+        second: input.impUid,
+      });
+    }
+  }
+
   if (!isEmailConfigured()) {
     console.warn("[payment] 메일 설정이 없어 주문 확인 메일을 보내지 못했습니다:", input.impUid);
     return;
   }
 
   const sent = await sendOrderMail({
-    planName: input.plan.name,
+    planName: input.billable.planName,
     amount: input.amount,
     impUid: input.impUid,
     merchantUid: input.merchantUid,
@@ -360,6 +552,10 @@ export async function recordOrder(input: {
     name: input.meta?.name,
     email: input.meta?.email,
     phone: input.meta?.phone,
+    ...(input.billable.quoteRef ? { quoteRef: input.billable.quoteRef } : {}),
+    ...(input.billable.quoteItems.length > 0
+      ? { items: input.billable.quoteItems }
+      : {}),
   });
 
   // 메일이 실패해도 결제 자체는 이미 완료된 건이라 응답을 뒤집지 않는다.
@@ -368,7 +564,8 @@ export async function recordOrder(input: {
     console.error("[payment] 주문 확인 메일 발송 실패 — 수동 확인 필요:", sent.reason, {
       impUid: input.impUid,
       merchantUid: input.merchantUid,
-      plan: input.plan.id,
+      plan: input.billable.planId,
+      quote: input.billable.quoteRef,
       amount: input.amount,
       customer: input.meta,
     });

@@ -14,6 +14,12 @@ import {
 import type { CouponDef, CouponKind, Plan } from "@/lib/data";
 import { formatKRW, formatWon, brand } from "@/lib/data";
 import { inboundChannel, track } from "@/lib/track";
+import {
+  createMerchantUid,
+  loadPortOneV1,
+  readRedirectResult,
+  requestPay,
+} from "@/lib/portone-client";
 
 /**
  * 결제에 쓸 수 있는 쿠폰 — 서버가 세션과 이벤트 기간을 확인해 넘긴다.
@@ -37,65 +43,7 @@ type Status = "idle" | "loading" | "verifying" | "success" | "pending" | "error"
 type Form = { name: string; email: string; phone: string; agree: boolean };
 type Errors = Partial<Record<keyof Form, string>>;
 
-/** PortOne V1 결제 결과 (PC 환경 콜백) */
-type PayResponse = {
-  success?: boolean;
-  imp_uid?: string | null;
-  merchant_uid?: string;
-  error_code?: string | null;
-  error_msg?: string | null;
-};
-
-declare global {
-  interface Window {
-    IMP?: {
-      init: (impCode: string) => void;
-      request_pay: (params: Record<string, unknown>, cb: (rsp: PayResponse) => void) => void;
-    };
-  }
-}
-
 const spring = { type: "spring", stiffness: 120, damping: 20 } as const;
-
-/** V1 결제 SDK. npm 패키지는 V2 전용이라 CDN 스크립트를 직접 로드한다. */
-const V1_SDK_URL = "https://cdn.iamport.kr/v1/iamport.js";
-
-let sdkPromise: Promise<void> | null = null;
-
-function loadPortOneV1(): Promise<void> {
-  if (window.IMP) return Promise.resolve();
-  if (sdkPromise) return sdkPromise;
-
-  sdkPromise = new Promise<void>((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>(`script[src="${V1_SDK_URL}"]`);
-    const script = existing ?? document.createElement("script");
-    script.addEventListener("load", () => (window.IMP ? resolve() : reject(new Error("IMP 로드 실패"))));
-    script.addEventListener("error", () => reject(new Error("결제 모듈을 불러오지 못했습니다.")));
-    if (!existing) {
-      script.src = V1_SDK_URL;
-      document.head.appendChild(script);
-    }
-  }).catch((err) => {
-    sdkPromise = null; // 다음 시도에서 재로드할 수 있도록 캐시를 비운다.
-    throw err;
-  });
-
-  return sdkPromise;
-}
-
-/**
- * 주문번호(merchant_uid) 생성.
- *
- * KCP 는 주문번호를 40자 이하로 제한하므로 UUID 를 그대로 쓸 수 없습니다
- * (`pay-startfit-{uuid}` 는 49자). 타임스탬프(base36) + 난수 조합으로 줄이되,
- * 서버가 접두사에서 플랜을 역추적할 수 있도록 `pay-{planId}-` 형태는 유지합니다.
- */
-function createMerchantUid(planId: string): string {
-  const rand = Array.from(crypto.getRandomValues(new Uint8Array(6)), (b) =>
-    b.toString(16).padStart(2, "0"),
-  ).join("");
-  return `pay-${planId}-${Date.now().toString(36)}-${rand}`;
-}
 
 export default function CheckoutClient({
   plan,
@@ -177,34 +125,23 @@ export default function CheckoutClient({
     }
   }, []);
 
-  /**
-   * 모바일 결제창은 팝업이 아니라 페이지 이동으로 동작하므로, 결제가 끝나면
-   * m_redirect_url 로 되돌아오면서 결과가 쿼리스트링에 실려 옵니다. 이때는
-   * request_pay 의 콜백이 실행되지 않으므로 여기서 이어받아 처리합니다.
-   */
+  // 모바일 결제창은 페이지 이동으로 동작해 콜백 대신 쿼리스트링으로 돌아온다.
   const handledRedirect = useRef(false);
   useEffect(() => {
     if (handledRedirect.current) return;
 
-    const params = new URLSearchParams(window.location.search);
-    const impUid = params.get("imp_uid");
-    const impSuccess = params.get("imp_success") ?? params.get("success");
-    if (!impUid && !impSuccess) return;
+    const result = readRedirectResult(`?plan=${plan.id}`);
+    if (!result) return;
 
     handledRedirect.current = true;
 
-    // 결과 파라미터를 URL 에서 지워 새로고침 시 중복 처리를 막는다.
-    const clean = new URLSearchParams();
-    clean.set("plan", plan.id);
-    window.history.replaceState({}, "", `${window.location.pathname}?${clean}`);
-
-    if (impSuccess === "false" || !impUid) {
+    if (!result.ok) {
       setStatus("error");
-      setMessage(params.get("error_msg") ?? "결제가 취소되었거나 실패했습니다.");
+      setMessage(result.message);
       return;
     }
 
-    void confirmPayment(impUid);
+    void confirmPayment(result.impUid);
   }, [plan.id, confirmPayment]);
 
   function validate(): boolean {
@@ -228,44 +165,33 @@ export default function CheckoutClient({
     setMessage("");
     try {
       await loadPortOneV1();
-      const IMP = window.IMP;
-      if (!IMP) throw new Error("결제 모듈을 불러오지 못했습니다.");
 
-      IMP.init(impCode);
-
-      const response = await new Promise<PayResponse>((resolve) => {
-        IMP.request_pay(
-          {
-            // 포트원이 pg 를 deprecated 처리했으므로 채널키를 우선 사용하고,
-            // 채널키가 없을 때만 레거시 pg 코드(`kcp.{사이트코드}`)로 지정한다.
-            ...(channelKey ? { channelKey } : { pg }),
-            pay_method: "card",
-            merchant_uid: createMerchantUid(plan.id),
-            name: `${brand.name} · ${plan.name}`,
-            amount: payAmount,
-            buyer_name: form.name,
-            buyer_email: form.email,
-            buyer_tel: form.phone,
-            // 서버가 결제 건만 보고 어떤 플랜인지 판별할 수 있도록 함께 기록한다.
-            // V1 의 custom_data 는 문자열이라 JSON 으로 직렬화해서 넘긴다.
-            //
-            // couponCodes 도 여기에 실어 보낸다. 클라이언트가 보낸 값이지만
-            // 서버가 코드마다 유효성과 금액을 다시 확인해 할인액을 직접 계산하므로
-            // (lib/portone.ts), 금액을 깎아 보내는 조작은 통하지 않는다.
-            custom_data: JSON.stringify({
-              planId: plan.id,
-              name: form.name,
-              email: form.email,
-              phone: form.phone,
-              ...(applied.length > 0
-                ? { couponCodes: applied.map((c) => c.code) }
-                : {}),
-            }),
-            // 모바일에서는 이 주소로 되돌아오며, 위 useEffect 가 결과를 이어받는다.
-            m_redirect_url: `${window.location.origin}/checkout?plan=${plan.id}`,
-          },
-          resolve,
-        );
+      const response = await requestPay(impCode, {
+        // 포트원이 pg 를 deprecated 처리했으므로 채널키를 우선 사용하고,
+        // 채널키가 없을 때만 레거시 pg 코드(`kcp.{사이트코드}`)로 지정한다.
+        ...(channelKey ? { channelKey } : { pg }),
+        pay_method: "card",
+        merchant_uid: createMerchantUid(plan.id),
+        name: `${brand.name} · ${plan.name}`,
+        amount: payAmount,
+        buyer_name: form.name,
+        buyer_email: form.email,
+        buyer_tel: form.phone,
+        // 서버가 결제 건만 보고 어떤 플랜인지 판별할 수 있도록 함께 기록한다.
+        // V1 의 custom_data 는 문자열이라 JSON 으로 직렬화해서 넘긴다.
+        //
+        // couponCodes 도 여기에 실어 보낸다. 클라이언트가 보낸 값이지만
+        // 서버가 코드마다 유효성과 금액을 다시 확인해 할인액을 직접 계산하므로
+        // (lib/portone.ts), 금액을 깎아 보내는 조작은 통하지 않는다.
+        custom_data: JSON.stringify({
+          planId: plan.id,
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          ...(applied.length > 0 ? { couponCodes: applied.map((c) => c.code) } : {}),
+        }),
+        // 모바일에서는 이 주소로 되돌아오며, 위 useEffect 가 결과를 이어받는다.
+        m_redirect_url: `${window.location.origin}/checkout?plan=${plan.id}`,
       });
 
       // 모바일 리다이렉트로 진행된 경우 콜백이 실행되지 않아 여기까지 오지 않는다.

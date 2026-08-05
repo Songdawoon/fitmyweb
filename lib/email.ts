@@ -27,8 +27,23 @@ async function sendMail(input: {
   html: string;
   /** 담당자가 메일에서 바로 "답장"하면 고객에게 가도록 지정한다. */
   replyTo?: string;
+  /**
+   * 받는 사람. 생략하면 지금까지처럼 CONTACT_TO_EMAIL(담당자)로 간다.
+   * 고객에게 직접 보내는 메일(견적 링크)만 이 값을 채운다 — 기본값을 담당자로
+   * 두어, 수신자를 깜빡한 메일이 엉뚱한 곳으로 가는 대신 우리에게 오게 한다.
+   */
+  to?: string;
 }): Promise<SendResult> {
   if (!isEmailConfigured()) return { ok: false, reason: "not-configured" };
+
+  // 콤마로 여러 수신자를 넣을 수 있게 한다.
+  const recipients = (input.to ?? to!)
+    .split(",")
+    .map((addr) => addr.trim())
+    .filter(Boolean);
+
+  // 빈 문자열을 넘겼을 때 담당자에게 잘못 가는 것을 막는다.
+  if (recipients.length === 0) return { ok: false, reason: "no-recipient" };
 
   try {
     const res = await fetch(API, {
@@ -39,11 +54,7 @@ async function sendMail(input: {
       },
       body: JSON.stringify({
         from,
-        // 콤마로 여러 수신자를 넣을 수 있게 한다.
-        to: to!
-          .split(",")
-          .map((addr) => addr.trim())
-          .filter(Boolean),
+        to: recipients,
         subject: input.subject,
         html: input.html,
         ...(input.replyTo ? { reply_to: input.replyTo } : {}),
@@ -74,6 +85,8 @@ function esc(value: unknown): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+const won = (value: number) => `${value.toLocaleString("ko-KR")}원`;
 
 /** 라벨-값 표. 값이 비었으면 "—" 로 채워 항목 자체가 사라지지 않게 한다. */
 function table(rows: [string, string | undefined][]): string {
@@ -156,6 +169,9 @@ export type OrderMail = {
   name?: string;
   email?: string;
   phone?: string;
+  /** 주문제작 견적 결제면 견적번호와 항목 내역. 고정 플랜은 비어 있다. */
+  quoteRef?: string;
+  items?: { label: string; amount: number }[];
 };
 
 export async function sendOrderMail(order: OrderMail): Promise<SendResult> {
@@ -164,7 +180,12 @@ export async function sendOrderMail(order: OrderMail): Promise<SendResult> {
     `결제 확인 ${new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })} · 경로 ${order.source}`,
     table([
       ["플랜", order.planName],
-      ["결제 금액", `${order.amount.toLocaleString("ko-KR")}원`],
+      ["결제 금액", won(order.amount)],
+      ...(order.quoteRef ? ([["견적번호", order.quoteRef]] as [string, string][]) : []),
+      // 견적 결제만 항목이 붙는다. 담당자가 무엇을 팔았는지 메일만 보고 알 수 있어야 한다.
+      ...(order.items ?? []).map(
+        ({ label, amount }) => [`· ${label}`, won(amount)] as [string, string],
+      ),
       ["주문자", order.name],
       ["이메일", order.email],
       ["연락처", order.phone],
@@ -174,8 +195,73 @@ export async function sendOrderMail(order: OrderMail): Promise<SendResult> {
   );
 
   return sendMail({
-    subject: `[결제완료] ${order.planName} · ${order.amount.toLocaleString("ko-KR")}원`,
+    subject: `[결제완료] ${order.planName} · ${won(order.amount)}`,
     html,
     replyTo: order.email,
+  });
+}
+
+// ── 주문제작 견적 링크 ─────────────────────────────────────────────
+// 담당자 알림이 아니라 **고객에게 직접 가는** 유일한 메일이다.
+// 그래서 내부 정보(견적 id, 토큰 원문)는 본문에 넣지 않는다 — 링크 안에만 있다.
+
+export type QuoteMail = {
+  ref: string;
+  title: string;
+  note?: string | null;
+  baseLabel: string;
+  baseAmount: number;
+  items: { label: string; amount: number }[];
+  total: number;
+  /** 절대 주소. lib/quotes.ts 의 quoteUrl() 로 만든다. */
+  url: string;
+  customerName?: string | null;
+  /** 받는 사람. 비어 있으면 보내지 않는다. */
+  customerEmail: string;
+};
+
+export async function sendQuoteLinkMail(quote: QuoteMail): Promise<SendResult> {
+  if (!quote.customerEmail.trim()) return { ok: false, reason: "no-recipient" };
+
+  const rows: [string, string | undefined][] = [
+    [quote.baseLabel, won(quote.baseAmount)],
+    ...quote.items.map(({ label, amount }) => [label, won(amount)] as [string, string]),
+    ["합계", won(quote.total)],
+  ];
+
+  // href 를 큰따옴표로 감싸고 esc() 가 따옴표를 처리하므로 속성 밖으로 빠져나갈 수 없다.
+  const button = `
+    <p style="margin:22px 0 0;">
+      <a href="${esc(quote.url)}"
+         style="display:inline-block;background:#f05540;color:#ffffff;text-decoration:none;
+                padding:14px 26px;border-radius:999px;font-size:14px;font-weight:700;">
+        견적 확인하고 결제하기
+      </a>
+    </p>
+    <p style="margin:12px 0 0;font-size:12px;color:#8a92a3;word-break:break-all;">
+      버튼이 눌리지 않으면 아래 주소를 브라우저에 붙여넣어 주세요.<br/>${esc(quote.url)}
+    </p>
+    <p style="margin:16px 0 0;font-size:12px;color:#8a92a3;">
+      결제 화면은 로그인 후 열립니다. 견적번호 ${esc(quote.ref)}
+    </p>`;
+
+  const intro = quote.note
+    ? `<p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#5c6472;white-space:pre-wrap;">${esc(quote.note)}</p>`
+    : "";
+
+  const html = layout(
+    `${quote.title} 견적을 보내드립니다`,
+    quote.customerName
+      ? `${quote.customerName}님께 드리는 견적입니다.`
+      : "협의한 내용으로 산정한 견적입니다.",
+    intro + table(rows) + button,
+  );
+
+  return sendMail({
+    to: quote.customerEmail,
+    subject: `[핏마이웹] ${quote.title} 견적 · ${won(quote.total)}`,
+    html,
+    // 고객이 "답장" 을 누르면 담당자에게 온다.
+    replyTo: to,
   });
 }

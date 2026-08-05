@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import Nav from "@/components/Nav";
@@ -39,9 +40,17 @@ export default async function AdminPage() {
         <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
           Admin
         </p>
-        <h1 className="mt-3 font-display text-4xl font-extrabold tracking-tightest text-ink">
-          상담 · 결제 현황
-        </h1>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-5">
+          <h1 className="font-display text-4xl font-extrabold tracking-tightest text-ink">
+            상담 · 결제 현황
+          </h1>
+          <Link
+            href="/admin/quotes"
+            className="inline-flex rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-paper transition-colors hover:bg-accent"
+          >
+            주문제작 견적
+          </Link>
+        </div>
 
         {!data ? (
           <p className="mt-12 rounded-2xl border border-line px-5 py-8 text-[14px] text-muted">

@@ -840,6 +840,40 @@ export function isEventCouponActive(now: Date = new Date()): boolean {
 /** 두 쿠폰을 모두 받았을 때의 총 할인액. */
 export const totalCouponBenefit = couponDefs.event.amount + couponDefs.signup.amount;
 
+// ── 주문제작 견적 ─────────────────────────────────────────────────
+// 고정 플랜(plans)에 맞지 않는 건을 관리자가 직접 조립해 결제 링크로 보낸다.
+// 여기 값은 견적 빌더의 "출발점"일 뿐이고, 실제 금액은 관리자가 화면에서 고쳐
+// quotes 행에 스냅샷으로 박힌다. 그래서 이 상수를 나중에 바꿔도 이미 보낸
+// 견적의 금액은 변하지 않는다.
+
+export const QUOTE_BASE_LABEL = "기본 제작비";
+export const QUOTE_BASE_PRICE = 500_000;
+export const QUOTE_OPTION_PRICE = 100_000;
+
+export type QuotePreset = { id: string; label: string; price: number };
+
+/**
+ * 견적 빌더의 체크박스 목록.
+ *
+ * id 는 과거 견적이 "어느 프리셋에서 왔는지" 를 가리키는 표식이므로 바꾸지
+ * 않는다. 금액은 addOns 와 같은 값으로 맞춰 두었다 — 같은 작업이 화면마다
+ * 다른 값으로 보이면 고객이 먼저 알아챈다.
+ */
+export const quotePresets: QuotePreset[] = [
+  { id: "page", label: "페이지 추가 (1페이지)", price: QUOTE_OPTION_PRICE },
+  { id: "board", label: "게시판 기능", price: QUOTE_OPTION_PRICE },
+  { id: "reserve", label: "예약 기능", price: QUOTE_OPTION_PRICE },
+  { id: "multilang", label: "다국어 지원", price: QUOTE_OPTION_PRICE },
+  { id: "pay", label: "결제 연동", price: 300_000 },
+  { id: "social", label: "소셜 로그인 연동", price: 300_000 },
+  { id: "seo", label: "네이버·구글 검색 등록", price: 50_000 },
+  { id: "domain", label: "홈페이지 주소·도메인 연동", price: 50_000 },
+];
+
+/** 견적 결제 화면 하단 안내. 고정 플랜의 excludes 와 같은 역할이다. */
+export const quoteNotice =
+  "이 견적은 상담에서 합의한 범위를 기준으로 산정되었습니다. 범위 밖 작업은 임의로 청구하지 않습니다.";
+
 // 홈 첫 진입 시 노출되는 런칭 기념 이벤트 팝업 카피.
 // 안내(쿠폰 구성)와 행동(쿠폰 발급)이 함께 있는 팝업이다. 여기서 받아야 두
 // 쿠폰이 계정에 저장되고, 그때부터 결제 화면에 나온다.

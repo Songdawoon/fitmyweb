@@ -47,7 +47,7 @@ export async function POST(req: Request) {
         source: "webhook",
         impUid: result.impUid,
         merchantUid: result.merchantUid,
-        plan: result.plan,
+        billable: result.billable,
         amount: result.amount,
         meta: result.meta,
         couponIds: result.couponIds,
