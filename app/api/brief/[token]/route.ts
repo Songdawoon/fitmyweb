@@ -25,6 +25,18 @@ export async function POST(req: Request, { params }: { params: { token: string }
     );
   }
 
+  // 확정된 건은 고칠 수 없다. saveBrief 도 WHERE 로 한 번 더 막지만,
+  // 여기서 걸러야 고객에게 이유를 알려 줄 수 있다.
+  if (brief.lockedAt) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "담당자 확인이 끝나 내용이 확정되었습니다. 변경이 필요하시면 담당자에게 연락해 주세요.",
+      },
+      { status: 409 },
+    );
+  }
+
   let raw: unknown;
   try {
     raw = await req.json();

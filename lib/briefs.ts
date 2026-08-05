@@ -117,6 +117,10 @@ export async function getBriefByToken(token: string): Promise<BriefRow | null> {
  *
  * 수정도 같은 경로를 쓴다. 관리자가 이미 봤더라도 내용이 바뀌면 seenAt 을
  * 비워 다시 알린다 — 고쳤는데 아무도 모르면 고친 의미가 없다.
+ *
+ * **확정된 브리프는 바뀌지 않는다.** 조건을 WHERE 에 넣어 DB 가 막는다 —
+ * 라우트에서 먼저 확인하더라도 그 사이에 관리자가 확정할 수 있고, 제작을
+ * 시작한 뒤에 내용이 달라지면 무엇을 기준으로 만든 건지 알 수 없게 된다.
  */
 export async function saveBrief(token: string, values: BriefValues): Promise<BriefRow | null> {
   const db = getDb();
@@ -131,11 +135,34 @@ export async function saveBrief(token: string, values: BriefValues): Promise<Bri
         seenAt: null,
         updatedAt: sql`now()`,
       })
-      .where(eq(briefs.token, token))
+      .where(and(eq(briefs.token, token), isNull(briefs.lockedAt)))
       .returning();
     return row ?? null;
   } catch (e) {
     console.error("[brief] 저장 실패:", e);
+    return null;
+  }
+}
+
+/**
+ * 제작 정보 확정 / 확정 해제.
+ *
+ * 확정하면 고객이 더 이상 고칠 수 없다. 되돌릴 수 있게 둔 것은 실수로 확정한
+ * 경우와, 제작 도중 고객에게 보완을 요청해야 하는 경우가 실제로 생기기 때문이다.
+ */
+export async function setBriefLocked(briefId: string, locked: boolean): Promise<BriefRow | null> {
+  const db = getDb();
+  if (!db) return null;
+
+  try {
+    const [row] = await db
+      .update(briefs)
+      .set({ lockedAt: locked ? sql`now()` : null, updatedAt: sql`now()` })
+      .where(eq(briefs.id, briefId))
+      .returning();
+    return row ?? null;
+  } catch (e) {
+    console.error("[brief] 확정 처리 실패:", e, briefId);
     return null;
   }
 }

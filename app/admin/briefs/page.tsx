@@ -107,7 +107,9 @@ export default async function AdminBriefsPage() {
                         {brief.submittedAt ? formatDateTime(brief.updatedAt) : "-"}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
-                        {brief.submittedAt ? (
+                        {brief.lockedAt ? (
+                          <span className="text-accent">확정 · 제작 중</span>
+                        ) : brief.submittedAt ? (
                           <span className="text-ink">작성 완료</span>
                         ) : brief.invitedAt ? (
                           <span className="text-faint">안내 발송됨</span>

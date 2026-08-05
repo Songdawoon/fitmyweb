@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import CopyLink from "@/components/admin/CopyLink";
+import BriefLockButton from "@/components/admin/BriefLockButton";
 import { auth, authEnabled } from "@/lib/auth";
 import { briefFields, formatWon } from "@/lib/data";
 import { briefUrl, briefValuesOf, getBriefById, markBriefSeen } from "@/lib/briefs";
@@ -53,14 +54,38 @@ export default async function BriefDetailPage({ params }: { params: { id: string
         )}
 
         <section className="mt-10 rounded-3xl border border-line bg-mist/50 p-8">
-          <CopyLink url={briefUrl(brief.token)} label="고객 작성 링크" />
-          <p className="mt-4 text-[13px] text-faint">
-            {brief.submittedAt
-              ? `최초 작성 ${new Date(brief.submittedAt).toLocaleString("ko-KR")} · 최종 수정 ${new Date(brief.updatedAt).toLocaleString("ko-KR")}`
-              : brief.invitedAt
-                ? `안내 메일 발송 ${new Date(brief.invitedAt).toLocaleString("ko-KR")} · 아직 작성 전입니다.`
-                : "안내 메일이 아직 발송되지 않았습니다. 위 링크를 복사해 직접 보내 주세요."}
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-[15px] font-semibold text-ink">
+                {brief.lockedAt ? (
+                  <span className="text-accent">확정됨 · 고객은 수정할 수 없습니다</span>
+                ) : brief.submittedAt ? (
+                  "작성 완료 · 고객이 아직 고칠 수 있습니다"
+                ) : (
+                  "작성 전"
+                )}
+              </p>
+              <p className="mt-1 text-[13px] text-faint">
+                {brief.lockedAt
+                  ? `확정 ${new Date(brief.lockedAt).toLocaleString("ko-KR")}`
+                  : brief.submittedAt
+                    ? `최초 작성 ${new Date(brief.submittedAt).toLocaleString("ko-KR")} · 최종 수정 ${new Date(brief.updatedAt).toLocaleString("ko-KR")}`
+                    : brief.invitedAt
+                      ? `안내 메일 발송 ${new Date(brief.invitedAt).toLocaleString("ko-KR")} · 아직 작성 전입니다.`
+                      : "안내 메일이 아직 발송되지 않았습니다. 아래 링크를 복사해 직접 보내 주세요."}
+              </p>
+            </div>
+
+            <BriefLockButton
+              briefId={brief.id}
+              locked={Boolean(brief.lockedAt)}
+              submitted={Boolean(brief.submittedAt)}
+            />
+          </div>
+
+          <div className="mt-6 border-t border-line pt-6">
+            <CopyLink url={briefUrl(brief.token)} label="고객 작성 링크" />
+          </div>
         </section>
 
         {!brief.submittedAt ? (

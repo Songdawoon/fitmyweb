@@ -29,6 +29,13 @@
       "when": 1785920846839,
       "tag": "0003_magical_thunderbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785921499575,
+      "tag": "0004_striped_echo",
+      "breakpoints": true
     }
   ]
 }

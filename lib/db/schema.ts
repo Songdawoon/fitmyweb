@@ -241,6 +241,14 @@ export const briefs = pgTable(
     submittedAt: timestamp("submitted_at", { withTimezone: true }),
     /** 관리자가 내용을 확인한 시각. 새 작성/수정이 오면 다시 비운다. */
     seenAt: timestamp("seen_at", { withTimezone: true }),
+    /**
+     * 관리자가 내용을 확정한 시각. 값이 있으면 고객은 더 이상 고칠 수 없다.
+     *
+     * 제작을 시작한 뒤에도 내용이 바뀌면 무엇을 기준으로 만든 건지 알 수 없게
+     * 된다. 고객은 자기가 보낸 내용을 계속 볼 수는 있고 수정만 막힌다 —
+     * 링크를 통째로 죽이면 "내가 뭐라고 썼더라" 를 물어보는 연락이 늘어난다.
+     */
+    lockedAt: timestamp("locked_at", { withTimezone: true }),
     /** 작성 링크 메일을 보낸 시각. */
     invitedAt: timestamp("invited_at", { withTimezone: true }),
 
