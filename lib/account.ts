@@ -338,9 +338,9 @@ export async function recordOrderRow(input: {
   customerName?: string | null;
   customerEmail?: string | null;
   customerPhone?: string | null;
-}) {
+}): Promise<string | null> {
   const db = getDb();
-  if (!db) return;
+  if (!db) return null;
 
   try {
     let userId: string | null = null;
@@ -353,13 +353,19 @@ export async function recordOrderRow(input: {
       userId = found?.id ?? null;
     }
 
-    await db
+    const [row] = await db
       .insert(orders)
       .values({ ...input, quoteId: input.quoteId ?? null, userId })
-      .onConflictDoNothing();
+      .onConflictDoNothing()
+      .returning({ id: orders.id });
+
+    // 충돌하면 빈 배열이다 — 완료 라우트와 웹훅 중 나중에 온 쪽이 여기 걸린다.
+    // 호출부는 이 값으로 "이번에 처음 기록된 주문인지" 를 판단한다.
+    return row?.id ?? null;
   } catch (e) {
     // 결제는 이미 끝난 건이라 응답을 뒤집지 않는다 — 로그로만 남긴다.
     console.error("[payment] 주문 저장 실패 — 수동 확인 필요:", e, input.impUid);
+    return null;
   }
 }
 

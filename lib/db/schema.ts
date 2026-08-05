@@ -201,6 +201,61 @@ export const orders = pgTable(
 );
 
 /**
+ * 제작 정보(브리프).
+ *
+ * 결제가 끝나면 주문마다 하나씩 만들어지고, token 이 박힌 링크를 고객에게
+ * 메일로 보낸다. 고객은 로그인 없이 그 링크로 들어와 제작에 필요한 내용을
+ * 적는다 — 결제 직후에 로그인을 한 번 더 요구하면 그냥 나가 버린다.
+ *
+ * 링크를 아는 사람만 열 수 있고, 열어도 볼 수 있는 건 자기가 적은 내용뿐이다.
+ * 견적 결제와 달리 돈이 오가지 않으므로 로그인까지 요구하지 않는다.
+ *
+ * 항목 정의는 lib/data.ts 의 briefFields 에 있다. 여기 컬럼과 1:1 로 맞춘다.
+ */
+export const briefs = pgTable(
+  "briefs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** 어느 결제 건의 제작 정보인지. 주문 하나에 브리프 하나. */
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    /** 작성 링크의 열쇠. 32자 base64url(192비트). */
+    token: text("token").notNull(),
+
+    companyName: text("company_name"),
+    industry: text("industry"),
+    phone: text("phone"),
+    email: text("email"),
+    purpose: text("purpose"),
+    pages: text("pages"),
+    reference: text("reference"),
+    mood: text("mood"),
+    logo: text("logo"),
+    materials: text("materials"),
+    domain: text("domain"),
+    launchDate: text("launch_date"),
+    message: text("message"),
+
+    /** 고객이 처음 보낸 시각. null 이면 아직 작성 전이다. */
+    submittedAt: timestamp("submitted_at", { withTimezone: true }),
+    /** 관리자가 내용을 확인한 시각. 새 작성/수정이 오면 다시 비운다. */
+    seenAt: timestamp("seen_at", { withTimezone: true }),
+    /** 작성 링크 메일을 보낸 시각. */
+    invitedAt: timestamp("invited_at", { withTimezone: true }),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    tokenIdx: uniqueIndex("briefs_token_idx").on(t.token),
+    // 완료 라우트와 웹훅이 같은 결제를 두 번 보고해도 브리프는 하나만 생긴다.
+    // 고객에게 가는 메일이 두 번 나가지 않게 하는 것도 이 인덱스가 보장한다.
+    orderIdx: uniqueIndex("briefs_order_idx").on(t.orderId),
+  }),
+);
+
+/**
  * 상담 신청. 기존에는 메일만 남겼으나, 고객이 마이페이지에서 진행 상황을
  * 확인할 수 있도록 함께 저장한다. mailed 는 알림 메일 발송 성공 여부.
  */
@@ -233,4 +288,5 @@ export type UserRow = typeof users.$inferSelect;
 export type CouponRow = typeof coupons.$inferSelect;
 export type QuoteRow = typeof quotes.$inferSelect;
 export type OrderRow = typeof orders.$inferSelect;
+export type BriefRow = typeof briefs.$inferSelect;
 export type InquiryRow = typeof inquiries.$inferSelect;

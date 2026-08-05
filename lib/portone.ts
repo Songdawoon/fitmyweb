@@ -1,9 +1,10 @@
 import "server-only";
 
 import { getPlan } from "@/lib/data";
-import { sendOrderMail, isEmailConfigured } from "@/lib/email";
+import { sendOrderMail, sendBriefInviteMail, isEmailConfigured } from "@/lib/email";
 import { recordOrderRow, resolveCoupons, markCouponUsed } from "@/lib/account";
 import { getQuoteById, getQuoteByRef, markQuotePaid } from "@/lib/quotes";
+import { briefUrl, createBriefForOrder, markBriefInvited } from "@/lib/briefs";
 import type { QuoteItem } from "@/lib/db";
 
 /**
@@ -508,7 +509,7 @@ export async function recordOrder(input: {
   // markCouponUsed 는 아직 미사용인 경우에만 갱신한다(멱등).
   for (const couponId of input.couponIds ?? []) await markCouponUsed(couponId);
 
-  await recordOrderRow({
+  const orderId = await recordOrderRow({
     impUid: input.impUid,
     merchantUid: input.merchantUid,
     planId: input.billable.planId,
@@ -535,6 +536,39 @@ export async function recordOrder(input: {
         first: closed.paidImpUid,
         second: input.impUid,
       });
+    }
+  }
+
+  /**
+   * 제작 정보 요청.
+   *
+   * orderId 는 이번 호출에서 주문이 처음 기록됐을 때만 들어온다(웹훅이
+   * 뒤이어 같은 건을 보고하면 null). 브리프 생성도 order_id 유니크로 한 번만
+   * 성공하므로, 고객에게 가는 메일은 두 겹으로 한 통이 보장된다 —
+   * 담당자에게 두 번 가는 건 감수해도 고객에게 두 번 가면 안 된다.
+   */
+  const customerEmail = input.meta?.email ?? null;
+  if (orderId && customerEmail) {
+    const brief = await createBriefForOrder(orderId);
+    if (brief && isEmailConfigured()) {
+      const invited = await sendBriefInviteMail({
+        planName: input.billable.planName,
+        amount: input.amount,
+        url: briefUrl(brief.token),
+        customerName: input.meta?.name ?? null,
+        customerEmail,
+      });
+
+      if (invited.ok) {
+        await markBriefInvited(brief.id);
+      } else {
+        // 결제는 이미 끝난 건이다. 링크는 관리자 화면에서 복사해 직접 보낼 수 있다.
+        console.error("[brief] 제작 정보 안내 메일 실패 — 수동 발송 필요:", invited.reason, {
+          impUid: input.impUid,
+          briefId: brief.id,
+          to: customerEmail,
+        });
+      }
     }
   }
 

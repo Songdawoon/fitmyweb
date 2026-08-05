@@ -201,6 +201,63 @@ export async function sendOrderMail(order: OrderMail): Promise<SendResult> {
   });
 }
 
+// ── 결제 완료 → 제작 정보 요청 ─────────────────────────────────────
+// 고객에게 직접 가는 메일이다. 결제가 끝난 직후가 제작 정보를 받아내기
+// 가장 좋은 순간이라, 영수증 확인이 아니라 다음 할 일을 안내한다.
+
+export type BriefInviteMail = {
+  planName: string;
+  amount: number;
+  /** 절대 주소. lib/briefs.ts 의 briefUrl() 로 만든다. */
+  url: string;
+  customerName?: string | null;
+  /** 받는 사람. 비어 있으면 보내지 않는다. */
+  customerEmail: string;
+};
+
+export async function sendBriefInviteMail(input: BriefInviteMail): Promise<SendResult> {
+  if (!input.customerEmail.trim()) return { ok: false, reason: "no-recipient" };
+
+  const button = `
+    <p style="margin:22px 0 0;">
+      <a href="${esc(input.url)}"
+         style="display:inline-block;background:#f05540;color:#ffffff;text-decoration:none;
+                padding:14px 26px;border-radius:999px;font-size:14px;font-weight:700;">
+        제작 정보 입력하기
+      </a>
+    </p>
+    <p style="margin:12px 0 0;font-size:12px;color:#8a92a3;word-break:break-all;">
+      버튼이 눌리지 않으면 아래 주소를 브라우저에 붙여넣어 주세요.<br/>${esc(input.url)}
+    </p>
+    <p style="margin:16px 0 0;font-size:13px;line-height:1.7;color:#5c6472;">
+      한 번에 다 채우지 않으셔도 됩니다. 이 링크로 언제든 다시 들어와 고칠 수 있고,
+      남은 부분은 담당자와 상담하며 함께 정리합니다.
+    </p>`;
+
+  const html = layout(
+    "결제가 확인되었습니다. 제작 정보를 알려주세요",
+    input.customerName
+      ? `${input.customerName}님, 결제해 주셔서 감사합니다.`
+      : "결제해 주셔서 감사합니다.",
+    `<p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#5c6472;">
+       아래 버튼을 눌러 제작에 필요한 내용을 알려주시면, 그 내용을 바탕으로
+       페이지 구성과 디자인을 준비해 연락드리겠습니다.
+     </p>` +
+      table([
+        ["결제 내용", input.planName],
+        ["결제 금액", won(input.amount)],
+      ]) +
+      button,
+  );
+
+  return sendMail({
+    to: input.customerEmail,
+    subject: `[핏마이웹] 결제가 확인되었습니다 · 제작 정보를 알려주세요`,
+    html,
+    replyTo: to,
+  });
+}
+
 // ── 주문제작 견적 링크 ─────────────────────────────────────────────
 // 담당자 알림이 아니라 **고객에게 직접 가는** 유일한 메일이다.
 // 그래서 내부 정보(견적 id, 토큰 원문)는 본문에 넣지 않는다 — 링크 안에만 있다.

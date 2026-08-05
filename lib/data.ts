@@ -874,6 +874,128 @@ export const quotePresets: QuotePreset[] = [
 export const quoteNotice =
   "이 견적은 상담에서 합의한 범위를 기준으로 산정되었습니다. 범위 밖 작업은 임의로 청구하지 않습니다.";
 
+// ── 제작 정보 (브리프) ─────────────────────────────────────────────
+// 결제가 끝나면 고객에게 링크를 보내 제작에 필요한 내용을 직접 적게 한다.
+// 상담 폼에서 묻던 것을 그대로 가져오되, 이미 결제한 고객에게 예산을 다시
+// 묻지 않고 대신 실제 제작에 필요한 것(로고·자료·도메인)을 더한다.
+//
+// 필드 정의를 여기 한곳에 두면 작성 화면과 관리자 상세가 같은 목록을 쓴다 —
+// 항목을 추가할 때 화면 두 곳을 따로 고치다 어긋나는 일이 없다.
+
+export type BriefFieldKey =
+  | "companyName"
+  | "industry"
+  | "phone"
+  | "email"
+  | "purpose"
+  | "pages"
+  | "reference"
+  | "mood"
+  | "logo"
+  | "materials"
+  | "domain"
+  | "launchDate"
+  | "message";
+
+export type BriefField = {
+  key: BriefFieldKey;
+  label: string;
+  type: "text" | "textarea" | "select" | "date" | "tel" | "email";
+  placeholder?: string;
+  hint?: string;
+  options?: string[];
+  required?: boolean;
+  /** 2열 배치에서 한 줄 전체를 쓴다. */
+  full?: boolean;
+  /** 저장 길이 상한. 서버가 이 값으로 자른다. */
+  max: number;
+};
+
+export const briefFields: BriefField[] = [
+  {
+    key: "companyName",
+    label: "상호 또는 브랜드명",
+    type: "text",
+    placeholder: "예: OO컴퍼니",
+    required: true,
+    max: 100,
+  },
+  { key: "industry", label: "업종", type: "text", placeholder: "예: 치과, 인테리어", max: 100 },
+  { key: "phone", label: "연락처", type: "tel", required: true, max: 40 },
+  { key: "email", label: "이메일", type: "email", placeholder: "you@company.com", max: 200 },
+  {
+    key: "purpose",
+    label: "홈페이지 제작 목적",
+    type: "textarea",
+    placeholder: "무엇을 위한 홈페이지인가요? 예: 상담 문의를 받고 싶다, 제품을 판매하고 싶다",
+    required: true,
+    full: true,
+    max: 1000,
+  },
+  {
+    key: "pages",
+    label: "필요한 페이지·기능",
+    type: "textarea",
+    placeholder: "예: 회사소개, 시술안내, 오시는 길, 온라인 예약",
+    hint: "지금 떠오르는 대로 적어 주세요. 함께 정리해 드립니다.",
+    full: true,
+    max: 1500,
+  },
+  {
+    key: "reference",
+    label: "참고 사이트",
+    type: "textarea",
+    placeholder: "마음에 드는 사이트 주소와, 어떤 점이 좋았는지",
+    full: true,
+    max: 1000,
+  },
+  {
+    key: "mood",
+    label: "원하는 분위기·색상",
+    type: "text",
+    placeholder: "예: 깔끔하고 신뢰감 있게, 파란색 계열",
+    max: 300,
+  },
+  {
+    key: "logo",
+    label: "로고",
+    type: "select",
+    options: ["있습니다 (파일 전달 가능)", "있지만 파일이 없습니다", "없습니다 (제작 필요)", "아직 정하지 못함"],
+    max: 60,
+  },
+  {
+    key: "materials",
+    label: "사진·글 자료 전달 방법",
+    type: "select",
+    options: ["이메일로 보내겠습니다", "카카오톡으로 보내겠습니다", "구글 드라이브 등 링크로 공유", "아직 준비하지 못했습니다"],
+    max: 60,
+  },
+  {
+    key: "domain",
+    label: "도메인 (홈페이지 주소)",
+    type: "select",
+    options: ["보유하고 있습니다", "없습니다 (구매 도움 필요)", "아직 정하지 못함"],
+    max: 60,
+  },
+  { key: "launchDate", label: "희망 오픈 일정", type: "date", max: 40 },
+  {
+    key: "message",
+    label: "그 밖에 전하고 싶은 내용",
+    type: "textarea",
+    placeholder: "꼭 넣고 싶은 문구, 피하고 싶은 스타일 등 무엇이든",
+    full: true,
+    max: 2000,
+  },
+];
+
+export const briefIntro = {
+  eyebrow: "제작 정보",
+  title: "제작에 필요한 내용을 알려주세요",
+  lead: "적어주신 내용을 바탕으로 페이지 구성과 디자인을 준비합니다. 지금 다 채우지 않아도 되고, 이 링크로 언제든 다시 들어와 고칠 수 있습니다.",
+  /** 필수 항목만 채워도 제출된다는 걸 분명히 해 부담을 낮춘다. */
+  assurance: "필수 항목만 채워도 보낼 수 있습니다. 나머지는 상담하며 함께 정리합니다.",
+};
+
 // 홈 첫 진입 시 노출되는 런칭 기념 이벤트 팝업 카피.
 // 안내(쿠폰 구성)와 행동(쿠폰 발급)이 함께 있는 팝업이다. 여기서 받아야 두
 // 쿠폰이 계정에 저장되고, 그때부터 결제 화면에 나온다.

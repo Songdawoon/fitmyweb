@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import PaymentAlert from "@/components/admin/PaymentAlert";
 import { auth, authEnabled } from "@/lib/auth";
 import { getAdminData, getUnseenOrders } from "@/lib/account";
+import { countUnseenBriefs } from "@/lib/briefs";
 import { formatWon } from "@/lib/data";
 
 export const metadata: Metadata = {
@@ -32,7 +33,11 @@ export default async function AdminPage() {
   // 허용 목록(ADMIN_EMAILS)에 없는 계정은 존재 자체를 알리지 않는다.
   if (!session.user.isAdmin) redirect("/mypage");
 
-  const [data, unseen] = await Promise.all([getAdminData(), getUnseenOrders()]);
+  const [data, unseen, unseenBriefs] = await Promise.all([
+    getAdminData(),
+    getUnseenOrders(),
+    countUnseenBriefs(),
+  ]);
 
   return (
     <>
@@ -45,12 +50,25 @@ export default async function AdminPage() {
           <h1 className="font-display text-4xl font-extrabold tracking-tightest text-ink">
             상담 · 결제 현황
           </h1>
-          <Link
-            href="/admin/quotes"
-            className="inline-flex rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-paper transition-colors hover:bg-accent"
-          >
-            주문제작 견적
-          </Link>
+          <div className="flex gap-3">
+            <Link
+              href="/admin/briefs"
+              className="inline-flex items-center gap-2 rounded-full border border-line px-5 py-2.5 text-sm font-semibold text-muted transition-colors hover:border-ink hover:text-ink"
+            >
+              제작 정보
+              {unseenBriefs > 0 && (
+                <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-bold text-paper">
+                  {unseenBriefs}
+                </span>
+              )}
+            </Link>
+            <Link
+              href="/admin/quotes"
+              className="inline-flex rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-paper transition-colors hover:bg-accent"
+            >
+              주문제작 견적
+            </Link>
+          </div>
         </div>
 
         <PaymentAlert initial={unseen} />
