@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { brand, formatKRW, quoteNotice } from "@/lib/data";
+import { formatPhone, isValidPhone, PHONE_HINT, PHONE_PLACEHOLDER } from "@/lib/phone";
 import { loadPortOneV1, readRedirectResult, requestPay } from "@/lib/portone-client";
 import { asQuoteStatus } from "@/lib/quoteStatus";
 import { inboundChannel, track } from "@/lib/track";
@@ -136,7 +137,7 @@ export default function QuoteCheckoutClient({
     const e: Errors = {};
     if (form.name.trim().length < 2) e.name = "이름 또는 담당자명을 입력해 주세요.";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "올바른 이메일 형식이 아닙니다.";
-    if (form.phone.replace(/\D/g, "").length < 9) e.phone = "연락 가능한 번호를 입력해 주세요.";
+    if (!isValidPhone(form.phone)) e.phone = PHONE_HINT;
     if (!form.agree) e.agree = "결제 진행을 위해 동의가 필요합니다.";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -306,9 +307,10 @@ export default function QuoteCheckoutClient({
                 <div>
                   <input
                     className="field"
-                    placeholder="연락처"
+                    inputMode="tel"
+                    placeholder={`연락처 (${PHONE_PLACEHOLDER})`}
                     value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })}
                   />
                   {errors.phone && (
                     <p className="mt-1.5 text-[13px] text-accent">{errors.phone}</p>

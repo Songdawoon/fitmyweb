@@ -3,6 +3,7 @@ import { sendInquiryMail, isEmailConfigured, type Inquiry } from "@/lib/email";
 import { auth } from "@/lib/auth";
 import { markInquiryMailed, recordInquiry } from "@/lib/account";
 import { contactFormEnabled, contactPaused } from "@/lib/data";
+import { formatPhone, isValidPhone, PHONE_HINT } from "@/lib/phone";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,9 +37,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, message: "잘못된 요청입니다." }, { status: 400 });
   }
 
+  const rawPhone = str(body.phone, 40);
+
   const inquiry: Inquiry = {
     name: str(body.name, 100),
-    phone: str(body.phone, 40),
+    // 저장·메일 모두 하이픈 표기로 통일한다.
+    phone: rawPhone ? formatPhone(rawPhone) : "",
     email: str(body.email, 200),
     industry: str(body.industry, 100),
     purpose: str(body.purpose, 500),
@@ -55,9 +59,17 @@ export async function POST(req: Request) {
   const emailMalformed =
     inquiry.email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inquiry.email);
 
+  // 연락처는 상담을 이어갈 유일한 수단이다. 걸 수 없는 번호로 접수되면
+  // 그 리드는 사실상 사라진다.
+  if (!isValidPhone(inquiry.phone)) {
+    return NextResponse.json(
+      { ok: false, message: `연락처를 확인해 주세요. ${PHONE_HINT}` },
+      { status: 422 },
+    );
+  }
+
   if (
     inquiry.name.length < 2 ||
-    !inquiry.phone ||
     (inquiry.purpose ?? "").length < 2 ||
     emailMalformed ||
     !consent

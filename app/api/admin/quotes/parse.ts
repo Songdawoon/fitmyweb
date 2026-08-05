@@ -5,6 +5,7 @@ import {
   QUOTE_MIN_TOTAL,
   type QuoteInput,
 } from "@/lib/quotes";
+import { formatPhone, isValidPhone, PHONE_HINT } from "@/lib/phone";
 
 /**
  * 견적 생성·수정이 공유하는 입력 검사.
@@ -63,6 +64,13 @@ export function parseQuoteBody(raw: unknown): ParseResult {
     return { ok: false, message: "고객 이메일 형식을 확인해 주세요." };
   }
 
+  // 연락처는 선택이지만, 적었다면 걸 수 있는 번호여야 한다.
+  // 저장은 항상 하이픈 표기로 통일한다 — 화면을 거치지 않고 들어온 값도 마찬가지다.
+  const customerPhone = str(body.customerPhone, 40);
+  if (customerPhone && !isValidPhone(customerPhone)) {
+    return { ok: false, message: `고객 연락처를 확인해 주세요. ${PHONE_HINT}` };
+  }
+
   return {
     ok: true,
     value: {
@@ -70,7 +78,7 @@ export function parseQuoteBody(raw: unknown): ParseResult {
       note: str(body.note, 2000) || null,
       customerName: str(body.customerName, 100) || null,
       customerEmail: customerEmail || null,
-      customerPhone: str(body.customerPhone, 40) || null,
+      customerPhone: customerPhone ? formatPhone(customerPhone) : null,
       baseLabel: str(body.baseLabel, 60) || "기본 제작비",
       baseAmount,
       items,

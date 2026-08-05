@@ -22,6 +22,7 @@ import {
   kakaoConsult,
 } from "@/lib/data";
 import { inboundChannel, track } from "@/lib/track";
+import { formatPhone, isValidPhone, PHONE_HINT, PHONE_PLACEHOLDER } from "@/lib/phone";
 import DateField from "./DateField";
 
 type Form = {
@@ -75,8 +76,7 @@ export default function ContactForm() {
   function validate(): boolean {
     const e: Errors = {};
     if (form.name.trim().length < 2) e.name = "이름 또는 업체명을 입력해 주세요.";
-    if (form.phone.replace(/\D/g, "").length < 9)
-      e.phone = "연락 가능한 번호를 입력해 주세요.";
+    if (!isValidPhone(form.phone)) e.phone = PHONE_HINT;
     if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
       e.email = "올바른 이메일 형식이 아닙니다.";
     if (form.purpose.trim().length < 2)
@@ -194,10 +194,10 @@ export default function ContactForm() {
         <Field label="연락처" error={errors.phone} required>
           <input
             className="field"
-            inputMode="numeric"
+            inputMode="tel"
             value={form.phone}
-            onChange={(e) => set("phone", e.target.value)}
-            placeholder="010 0000 0000"
+            onChange={(e) => set("phone", formatPhone(e.target.value))}
+            placeholder={PHONE_PLACEHOLDER}
           />
         </Field>
         <Field label="홈페이지 제작 목적" error={errors.purpose} required className="sm:col-span-2">

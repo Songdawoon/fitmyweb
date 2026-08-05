@@ -14,6 +14,7 @@ import {
 import type { CouponDef, CouponKind, Plan } from "@/lib/data";
 import { formatKRW, formatWon, brand } from "@/lib/data";
 import { inboundChannel, track } from "@/lib/track";
+import { formatPhone, isValidPhone, PHONE_HINT, PHONE_PLACEHOLDER } from "@/lib/phone";
 import {
   createMerchantUid,
   loadPortOneV1,
@@ -148,7 +149,7 @@ export default function CheckoutClient({
     const e: Errors = {};
     if (form.name.trim().length < 2) e.name = "이름 또는 담당자명을 입력해 주세요.";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "올바른 이메일 형식이 아닙니다.";
-    if (form.phone.replace(/\D/g, "").length < 9) e.phone = "연락 가능한 번호를 입력해 주세요.";
+    if (!isValidPhone(form.phone)) e.phone = PHONE_HINT;
     if (!form.agree) e.agree = "결제 진행을 위해 동의가 필요합니다.";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -253,10 +254,10 @@ export default function CheckoutClient({
               <Field label="휴대폰" error={errors.phone}>
                 <input
                   className="field"
-                  inputMode="numeric"
+                  inputMode="tel"
                   value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="010 0000 0000"
+                  onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })}
+                  placeholder={PHONE_PLACEHOLDER}
                 />
               </Field>
             </div>

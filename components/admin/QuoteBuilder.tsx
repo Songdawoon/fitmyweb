@@ -10,6 +10,7 @@ import {
   quotePresets,
   type QuotePreset,
 } from "@/lib/data";
+import { formatPhone, isValidPhone, PHONE_HINT, PHONE_PLACEHOLDER } from "@/lib/phone";
 
 /** lib/db/schema.ts 의 QuoteItem 과 같은 모양. 서버 모듈을 끌고 오지 않으려고 다시 적는다. */
 export type BuilderItem = {
@@ -63,6 +64,9 @@ export default function QuoteBuilder({ quote }: { quote: BuilderQuote | null }) 
     [items, baseAmount],
   );
 
+  // 연락처는 선택이지만, 적었다면 걸 수 있는 번호여야 한다.
+  const phoneInvalid = customerPhone.trim().length > 0 && !isValidPhone(customerPhone);
+
   const checkedPresets = useMemo(
     () => new Set(items.map((i) => i.presetId).filter(Boolean) as string[]),
     [items],
@@ -99,6 +103,11 @@ export default function QuoteBuilder({ quote }: { quote: BuilderQuote | null }) 
     if (items.some((i) => !i.label.trim())) {
       setFailed(true);
       setMessage("이름이 비어 있는 항목이 있습니다.");
+      return;
+    }
+    if (phoneInvalid) {
+      setFailed(true);
+      setMessage(`연락처를 확인해 주세요. ${PHONE_HINT}`);
       return;
     }
     // 이미 보낸 견적의 금액을 고치면 고객 화면 금액도 즉시 바뀐다. 결제 시점에
@@ -187,13 +196,21 @@ export default function QuoteBuilder({ quote }: { quote: BuilderQuote | null }) 
                 onChange={(e) => setCustomerEmail(e.target.value)}
                 disabled={readOnly}
               />
-              <input
-                className="field"
-                placeholder="연락처"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                disabled={readOnly}
-              />
+              <div>
+                <input
+                  className="field"
+                  inputMode="tel"
+                  placeholder={`연락처 (${PHONE_PLACEHOLDER})`}
+                  value={customerPhone}
+                  // 입력하는 동안 하이픈을 붙여 준다. 형식이 눈에 보이면
+                  // 자릿수가 모자란 번호를 적고 넘어가기 어렵다.
+                  onChange={(e) => setCustomerPhone(formatPhone(e.target.value))}
+                  disabled={readOnly}
+                />
+                {phoneInvalid && (
+                  <p className="mt-1.5 text-[13px] text-accent">{PHONE_HINT}</p>
+                )}
+              </div>
             </div>
             <textarea
               className="field min-h-[96px] resize-y"
